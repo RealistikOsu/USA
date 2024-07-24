@@ -11,6 +11,7 @@
     "@fastify/request-context": "^5.1.0",
     "dotenv": "^16.4.5",
     "fastify": "^4.28.1",
-    "mysql2": "^3.10.3"
+    "mysql2": "^3.10.3",
+    "osu-api-v2-js": "^1.0.4"
   }
 }

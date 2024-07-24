@@ -1,5 +1,5 @@
 import fastify from "fastify";
-import { createRoutes } from "./routes/routes";
+import { createRoutes } from "./routes";
 import { registerContext } from "./context";
 
 export const createApp = async () => {

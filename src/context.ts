@@ -1,7 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import fastifyRequestContext from '@fastify/request-context';
 import mysql from 'mysql2/promise';
-import { SeasonalBackgroundRepository } from './resources/seasonal_bgs';
+import { SeasonalBackgroundRepository } from './resources/seasonal_background';
 
 declare module '@fastify/request-context' {
     interface RequestContextData {
