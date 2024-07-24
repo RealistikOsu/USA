@@ -1,13 +1,16 @@
 import { FastifyReply, FastifyRequest } from "fastify";
-import { searchBeatmapsets, BeatmapSearchParameters } from "../adapters/cheesegull";
+import { searchCheesegullBeatmapsets, BeatmapSearchParameters, getCheesegullBeatmapset } from "../adapters/cheesegull";
 import { osuApiStatusFromDirectStatus } from "../adapters/beatmap";
-import { osuDirectBeatmapsetFromCheesegullBeatmapset } from "../adapters/osu_direct";
+import { osuDirectBeatmapsetCardFromCheesegullBeatmapset, osuDirectBeatmapsetFromCheesegullBeatmapset } from "../adapters/osu_direct";
 import { HttpStatusCode } from "axios";
 import { AuthenticationService } from "../services/authentication";
 
-interface OsuDirectSearchParameters {
+interface AuthenticateParameters {
     u: string;
     h: string;
+}
+
+interface OsuDirectSearchParameters extends AuthenticateParameters {
     r: string;
     q: string;
     m: string;
@@ -23,7 +26,7 @@ const DEFAULT_QUERIES = [
 ]
 
 // TODO: move this into a hook or something
-async function userIsAuthenticated(query: OsuDirectSearchParameters, authenticationService: AuthenticationService): Promise<boolean> {
+async function userIsAuthenticated(query: AuthenticateParameters, authenticationService: AuthenticationService): Promise<boolean> {
     if (query.u === undefined || query.h === undefined) {
         return false;
     }
@@ -68,11 +71,45 @@ export const osuDirectSearch = async (request: FastifyRequest<{ Querystring: Osu
         params.query = query;
     }
 
-    const beatmapsets = await searchBeatmapsets(params);
+    const beatmapsets = await searchCheesegullBeatmapsets(params);
     const beatmapsetCount = beatmapsets.length;
 
     const osuDirectBeatmapsets = beatmapsets.map(beatmapset => osuDirectBeatmapsetFromCheesegullBeatmapset(beatmapset));
     const osuDirectBeatmapsetCount = beatmapsetCount >= 100 ? 101 : beatmapsetCount;
 
     return `${osuDirectBeatmapsetCount}\n${osuDirectBeatmapsets.join("\n")}`;
+}
+
+interface OsuDirectBeatmapCardParameters extends AuthenticateParameters {
+    s?: string;
+    b?: string;
+}
+
+export const osuDirectBeatmapsetCard = async (request: FastifyRequest<{ Querystring: OsuDirectBeatmapCardParameters }>, reply: FastifyReply) => {
+    const authenticationService = request.requestContext.get('authenticationService')!;
+    const beatmapService = request.requestContext.get('beatmapService')!;
+
+    const authenticatedUser = await userIsAuthenticated(request.query, authenticationService);
+    if (!authenticatedUser) {
+        reply.code(HttpStatusCode.Unauthorized);
+        reply.send();
+        return;
+    }
+
+    let beatmapsetId = request.query.s !== undefined ? parseInt(request.query.s) : null;
+    const beatmapId = request.query.b !== undefined ? parseInt(request.query.b) : null;
+
+    if (beatmapId != null && beatmapsetId === null) {
+        const beatmap = await beatmapService.findByBeatmapId(beatmapId);
+        beatmapsetId = beatmap?.beatmapset_id ?? null;
+    }
+
+    if (beatmapsetId === null) {
+        reply.code(HttpStatusCode.NotFound);
+        reply.send();
+        return;
+    }
+
+    const beatmapset = await getCheesegullBeatmapset(beatmapsetId);
+    return osuDirectBeatmapsetCardFromCheesegullBeatmapset(beatmapset);
 }

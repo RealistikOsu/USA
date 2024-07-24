@@ -86,11 +86,16 @@ const beatmapServiceInstance = axios.create({
     baseURL: process.env.BEATMAPS_SERVICE_BASE_URL,
 });
 
-export async function searchBeatmapsets(params: BeatmapSearchParameters): Promise<CheesegullBeatmapset[]> {
+export async function searchCheesegullBeatmapsets(params: BeatmapSearchParameters): Promise<CheesegullBeatmapset[]> {
     const response = await beatmapServiceInstance.get("/search", { params });
     
     const beatmapsets = response.data as _CheesegullBeatmapset[];
     return beatmapsets.map(beatmapset => cheesegullBeatmapsetFromResponse(beatmapset));
+}
+
+export async function getCheesegullBeatmapset(beatmapsetId: number): Promise<CheesegullBeatmapset> {
+    const response = await beatmapServiceInstance.get(`/s/${beatmapsetId}`);
+    return cheesegullBeatmapsetFromResponse(response.data);
 }
 
 function cheesegullBeatmapsetFromResponse(response: _CheesegullBeatmapset): CheesegullBeatmapset {
