@@ -14,36 +14,7 @@ export class BeatmapService {
             beatmap = await this.getBeatmapFromOsuApi(beatmapId);
 
             if (beatmap !== null) {
-                beatmap = await this.beatmapRepository.create(
-                    beatmap.beatmap_id,
-                    beatmap.beatmapset_id,
-                    beatmap.beatmap_md5,
-                    beatmap.song_name,
-                    beatmap.ar,
-                    beatmap.od,
-                    beatmap.mode,
-                    beatmap.rating,
-                    beatmap.difficulty_std,
-                    beatmap.difficulty_taiko,
-                    beatmap.difficulty_ctb,
-                    beatmap.difficulty_mania,
-                    beatmap.max_combo,
-                    beatmap.hit_length,
-                    beatmap.bpm,
-                    beatmap.playcount,
-                    beatmap.passcount,
-                    beatmap.ranked,
-                    beatmap.latest_update,
-                    beatmap.ranked_status_freezed,
-                    beatmap.pp_100,
-                    beatmap.pp_99,
-                    beatmap.pp_98,
-                    beatmap.pp_95,
-                    beatmap.disable_pp,
-                    beatmap.file_name,
-                    beatmap.rankedby,
-                    beatmap.priv_crawler
-                )
+                await this.beatmapRepository.create(beatmap);
             }
         }
 
