@@ -113,3 +113,14 @@ export const osuDirectBeatmapsetCard = async (request: FastifyRequest<{ Querystr
     const beatmapset = await getCheesegullBeatmapset(beatmapsetId);
     return osuDirectBeatmapsetCardFromCheesegullBeatmapset(beatmapset);
 }
+
+interface DownloadBeatmapsetParameters {
+    beatmapsetId: string;
+}
+
+export const downloadBeatmapset = async (request: FastifyRequest<{ Params: DownloadBeatmapsetParameters }>, reply: FastifyReply) => {
+    reply.redirect(
+        `${process.env.BEATMAP_DOWNLOAD_MIRROR_BASE_URL}/d/${request.params.beatmapsetId}`,
+        HttpStatusCode.MovedPermanently,
+    );
+}
