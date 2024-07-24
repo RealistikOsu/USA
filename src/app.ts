@@ -5,7 +5,7 @@ import { registerContext } from "./context";
 export const createApp = async () => {
     const server = fastify();
 
-    registerContext(server);
+    await registerContext(server);
     createRoutes(server);
 
     return server;

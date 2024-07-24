@@ -1,12 +1,11 @@
+import { v2 } from "osu-api-extended";
 import { osuApiBeatmapToRippleBeatmap } from "../adapters/beatmap";
 import { Beatmap } from "../database";
 import { BeatmapRepository } from "../resources/beatmap";
-import { API as OsuApi } from "osu-api-v2-js";
 
 export class BeatmapService {
     constructor(
-        private beatmapRepository: BeatmapRepository,
-        private osuApi: OsuApi) { }
+        private beatmapRepository: BeatmapRepository) { }
 
     async findByBeatmapId(beatmapId: number): Promise<Beatmap | null> {
         let beatmap = await this.beatmapRepository.findByBeatmapId(beatmapId);
@@ -23,7 +22,7 @@ export class BeatmapService {
     }
 
     private async getBeatmapFromOsuApi(beatmapId: number): Promise<Beatmap | null> {
-        const beatmap = await this.osuApi.getBeatmap(beatmapId);
+        const beatmap = await v2.beatmap.id.details(beatmapId);
 
         if (beatmap === null) {
             return null;

@@ -1,7 +1,7 @@
-import { Beatmap as OsuBeatmap } from "osu-api-v2-js";
 import { Beatmap } from "../database";
+import { response as OsuBeatmap } from "osu-api-extended/dist/types/v2_beatmap_id_details";
 
-export function osuApiModeAsInteger(mode: "osu" | "taiko" | "fruits" | "mania"): number {
+export function osuApiModeAsInteger(mode: string): number {
     switch (mode) {
         case "osu":
             return 0;
@@ -11,6 +11,8 @@ export function osuApiModeAsInteger(mode: "osu" | "taiko" | "fruits" | "mania"):
             return 2;
         case "mania":
             return 3;
+        default:
+            throw new Error(`Invalid mode string: ${mode}`)
     }
 }
 
@@ -22,7 +24,7 @@ export function formatRippleBeatmapFilename(artist: string, title: string, diffi
     return `${artist} - ${title} [${difficulty}] (${creator}).osu`;
 }
 
-export function osuApiBeatmapToRippleBeatmap(beatmap: OsuBeatmap.Extended.WithFailtimesBeatmapset): Beatmap {
+export function osuApiBeatmapToRippleBeatmap(beatmap: OsuBeatmap): Beatmap {
     return {
         beatmap_id: beatmap.id,
         beatmapset_id: beatmap.beatmapset_id,
