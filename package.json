@@ -1,5 +1,6 @@
 {
   "devDependencies": {
+    "@types/bcrypt": "^5.0.2",
     "@types/node": "^20.14.12",
     "typescript": "^5.5.4"
   },
@@ -10,6 +11,7 @@
   "dependencies": {
     "@fastify/request-context": "^5.1.0",
     "axios": "^1.7.2",
+    "bcrypt": "^5.1.1",
     "dotenv": "^16.4.5",
     "fastify": "^4.28.1",
     "kysely": "^0.27.4",

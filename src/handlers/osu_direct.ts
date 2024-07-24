@@ -2,8 +2,11 @@ import { FastifyReply, FastifyRequest } from "fastify";
 import { searchBeatmapsets, BeatmapSearchParameters } from "../adapters/cheesegull";
 import { osuApiStatusFromDirectStatus } from "../adapters/beatmap";
 import { osuDirectBeatmapsetFromCheesegullBeatmapset } from "../adapters/osu_direct";
+import { HttpStatusCode } from "axios";
 
 interface OsuDirectSearchParameters {
+    u: string;
+    h: string;
     r: string;
     q: string;
     m: string;
@@ -19,6 +22,16 @@ const DEFAULT_QUERIES = [
 ]
 
 export const osuDirectSearch = async (request: FastifyRequest<{ Querystring: OsuDirectSearchParameters }>, reply: FastifyReply) => {
+    const authenticationService = request.requestContext.get('authenticationService')!;
+
+    // TODO: move this into a hook or something
+    const authenticatedUser = await authenticationService.canAuthenticateUser(request.query.u, request.query.h);
+    if (!authenticatedUser) {
+        reply.status(HttpStatusCode.Unauthorized);
+        reply.send();
+        return;
+    }
+    
     const query = request.query.q;
     const rankedStatus = parseInt(request.query.r);
     const mode = parseInt(request.query.m);

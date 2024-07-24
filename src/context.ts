@@ -7,13 +7,17 @@ import { BeatmapRepository } from './resources/beatmap';
 import { Kysely, MysqlDialect } from 'kysely';
 import { Database } from './database';
 import { auth } from 'osu-api-extended';
+import { UserRepository } from './resources/user';
+import { AuthenticationService } from './services/authentication';
 
 declare module '@fastify/request-context' {
     interface RequestContextData {
         _database: Kysely<Database>;
         _beatmapRepository: BeatmapRepository;
+        _userRepository: UserRepository;
         seasonalBackgroundRepository: SeasonalBackgroundRepository;
         beatmapService: BeatmapService;
+        authenticationService: AuthenticationService;
     }
 }
 
@@ -51,9 +55,14 @@ export const registerContext = async (server: FastifyInstance) => {
         const beatmapRepository = new BeatmapRepository(database);
         const beatmapService = new BeatmapService(beatmapRepository);
 
+        const userRepository = new UserRepository(database);
+        const authenticationService = new AuthenticationService(userRepository);
+
         request.requestContext.set('_database', database);
         request.requestContext.set('_beatmapRepository', beatmapRepository);
+        request.requestContext.set('_userRepository', userRepository);
         request.requestContext.set('seasonalBackgroundRepository', seasonalBackgroundRepository);
         request.requestContext.set('beatmapService', beatmapService);
+        request.requestContext.set('authenticationService', authenticationService);
     });
 }

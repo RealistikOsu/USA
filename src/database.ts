@@ -6,6 +6,7 @@ export interface Database {
     scores: ScoresTable;
     scores_relax: ScoresTable;
     scores_ap: ScoresTable;
+    users: UsersTable;
 }
 
 export interface SeasonalBackgroundTable {
@@ -67,9 +68,43 @@ export interface ScoresTable {
     playtime: number;
 }
 
+export interface UsersTable {
+    id: Generated<number>;
+    osuver: string | null;
+    username: string;
+    username_safe: string;
+    ban_datetime: Date;
+    password_md5: string;
+    salt: string;
+    email: string;
+    register_datetime: number;
+    rank: boolean;
+    allowed: boolean;
+    latest_activity: number;
+    silence_end: number;
+    silence_reason: string;
+    password_version: number;
+    privileges: number;
+    donor_expire: number;
+    flags: number;
+    achievements_version: number;
+    achievements_0: number;
+    achievements_1: number;
+    notes: string | null;
+    frozen: number;
+    freezedate: number;
+    firstloginafterfrozen: number;
+    bypass_hwid: boolean;
+    ban_reason: string;
+    disabled_comments: boolean;
+    country: string;
+    api_key: string;
+}
+
 export type NewBeatmap = Insertable<BeatmapsTable>;
 export type NewScore = Insertable<ScoresTable>;
 
 export type SeasonalBackground = Selectable<SeasonalBackgroundTable>;
 export type Beatmap = Selectable<BeatmapsTable>;
 export type Score = Selectable<ScoresTable>;
+export type User = Selectable<UsersTable>;
