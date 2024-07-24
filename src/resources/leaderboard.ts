@@ -1,16 +1,5 @@
-/* 
-def osu_string(self, username: str, rank: int) -> str:
-        if self.mode > Mode.MANIA:
-            score = int(self.pp)
-        else:
-            score = self.score
-
-        return (
-            f"{self.id}|{username}|{score}|{self.max_combo}|{self.n50}|{self.n100}|{self.n300}|{self.nmiss}|"
-            f"{self.nkatu}|{self.ngeki}|{int(self.full_combo)}|{int(self.mods)}|{self.user_id}|{rank}|{self.time}|"
-            "1"  # has replay
-        )
-*/
+import { Database } from "../database";
+import { Kysely } from "kysely";
 
 export interface LeaderboardScore {
     id: number;
@@ -33,5 +22,7 @@ export interface LeaderboardScore {
 
 
 export class LeaderboardRepository {
+    constructor(private database: Kysely<Database>) {}
+
     
 }

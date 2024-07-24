@@ -1,9 +1,8 @@
-import { createApp } from './app';
 import { configDotenv } from 'dotenv';
-
-import { Logger, ILogObj } from "tslog";
-
 configDotenv();
+
+import { createApp } from './app';
+import { Logger, ILogObj } from "tslog";
 
 async function main() {
     const logger: Logger<ILogObj> = new Logger();

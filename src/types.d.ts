@@ -12,5 +12,7 @@ declare namespace NodeJS {
         readonly OSU_API_V2_CLIENT_SECRET: string;
 
         readonly PERFORMANCE_SERVICE_BASE_URL: string;
+        readonly BEATMAPS_SERVICE_BASE_URL: string;
+        readonly BEATMAP_DOWNLOAD_MIRROR_BASE_URL: string;
     }
 }

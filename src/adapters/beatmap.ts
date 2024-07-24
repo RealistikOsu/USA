@@ -1,6 +1,25 @@
 import { Beatmap } from "../database";
 import { response as OsuBeatmap } from "osu-api-extended/dist/types/v2_beatmap_id_details";
 
+export function osuApiStatusFromDirectStatus(status: number): number {
+    switch (status) {
+        case 0: // ranked
+            return 1;
+        case 2: // pending
+            return 0;
+        case 3: // qualified
+            return 3;
+        case 5: // graveyard
+            return 0;
+        case 7: // ranked (played)
+            return 1;
+        case 8: // loved
+            return 4;
+        default:
+            throw new Error(`Invalid direct status ${status}`);
+    }
+}
+
 export function osuApiModeAsInteger(mode: string): number {
     switch (mode) {
         case "osu":
@@ -12,7 +31,7 @@ export function osuApiModeAsInteger(mode: string): number {
         case "mania":
             return 3;
         default:
-            throw new Error(`Invalid mode string: ${mode}`)
+            throw new Error(`Invalid mode string: ${mode}`);
     }
 }
 
