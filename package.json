@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@fastify/request-context": "^5.1.0",
+    "axios": "^1.7.2",
     "dotenv": "^16.4.5",
     "fastify": "^4.28.1",
     "mysql2": "^3.10.3",

@@ -10,5 +10,7 @@ declare namespace NodeJS {
 
         readonly OSU_API_V2_CLIENT_ID: string;
         readonly OSU_API_V2_CLIENT_SECRET: string;
+
+        readonly PERFORMANCE_SERVICE_BASE_URL: string;
     }
 }
