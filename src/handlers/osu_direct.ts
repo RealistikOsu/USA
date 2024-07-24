@@ -3,6 +3,7 @@ import { searchBeatmapsets, BeatmapSearchParameters } from "../adapters/cheesegu
 import { osuApiStatusFromDirectStatus } from "../adapters/beatmap";
 import { osuDirectBeatmapsetFromCheesegullBeatmapset } from "../adapters/osu_direct";
 import { HttpStatusCode } from "axios";
+import { AuthenticationService } from "../services/authentication";
 
 interface OsuDirectSearchParameters {
     u: string;
@@ -21,13 +22,26 @@ const DEFAULT_QUERIES = [
     'Most Played',
 ]
 
+// TODO: move this into a hook or something
+async function userIsAuthenticated(query: OsuDirectSearchParameters, authenticationService: AuthenticationService): Promise<boolean> {
+    if (query.u === undefined || query.h === undefined) {
+        return false;
+    }
+
+    const authenticatedUser = await authenticationService.canAuthenticateUser(query.u, query.h);
+    if (!authenticatedUser) {
+        return false;
+    }
+
+    return true;
+}
+
 export const osuDirectSearch = async (request: FastifyRequest<{ Querystring: OsuDirectSearchParameters }>, reply: FastifyReply) => {
     const authenticationService = request.requestContext.get('authenticationService')!;
 
-    // TODO: move this into a hook or something
-    const authenticatedUser = await authenticationService.canAuthenticateUser(request.query.u, request.query.h);
+    const authenticatedUser = await userIsAuthenticated(request.query, authenticationService);
     if (!authenticatedUser) {
-        reply.status(HttpStatusCode.Unauthorized);
+        reply.code(HttpStatusCode.Unauthorized);
         reply.send();
         return;
     }
