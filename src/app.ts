@@ -1,5 +1,4 @@
-import fastify from "fastify"
-import mysql from "mysql2/promise";
+import fastify from "fastify";
 import { createRoutes } from "./routes/routes";
 import { registerContext } from "./context";
 

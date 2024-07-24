@@ -1,9 +1,8 @@
 import { FastifyReply, FastifyRequest } from 'fastify';
-import { getEnabledSeasonalBGs } from '../repositories/seasonal_bgs';
 
 export const getSeasonals = async (request: FastifyRequest, reply: FastifyReply) => {
-    const database = request.requestContext.get('database')!;
+    const seasonalBackgroundRepository = request.requestContext.get('seasonalBackgroundRepository')!;
 
-    const seasonals = await getEnabledSeasonalBGs(database);
+    const seasonals = await seasonalBackgroundRepository.getSeasonalBackgrounds();
     return seasonals.map(seasonal => seasonal.url);
 }
