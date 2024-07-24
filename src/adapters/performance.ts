@@ -1,7 +1,5 @@
 import axios from 'axios';
 
-// I preferred my class.
-
 export interface PerformanceResult {
     stars: number;
     pp: number;
@@ -20,10 +18,12 @@ export interface PerformanceRequest {
     passed_objects?: number;
 }
 
-async function makePerformanceRequest(requests: PerformanceRequest[]): Promise<PerformanceResult[]> {
-    const http = axios.create();
+const performanceServiceInstance = axios.create({
+    baseURL: process.env.PERFORMANCE_SERVICE_BASE_URL,
+});
 
-    const response = await http.post(`${process.env.PERFORMANCE_SERVICE_BASE_URL}/api/v1/calculate`, requests, {
+async function makePerformanceRequest(requests: PerformanceRequest[]): Promise<PerformanceResult[]> {
+    const response = await performanceServiceInstance.post("/api/v1/calculate", requests, {
         timeout: 1000,
     });
 
