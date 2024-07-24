@@ -1,5 +1,4 @@
 import { Connection } from "mysql2/promise";
-import { API as OsuApi, Beatmap as OsuBeatmap } from "osu-api-v2-js";
 
 export interface Beatmap {
     beatmap_id: number;
@@ -35,7 +34,6 @@ export interface Beatmap {
 export class BeatmapRepository {
     constructor(
         private database: Connection,
-        private osuApi: OsuApi,
     ) { }
 
     async create(
@@ -134,10 +132,10 @@ export class BeatmapRepository {
         };
     }
 
-    private async fromBeatmapIdDatabase(beatmap_id: number): Promise<Beatmap | null> {
+    async findByBeatmapId(beatmapId: number): Promise<Beatmap | null> {
         const [results, _] = await this.database.query(
             "SELECT * FROM beatmaps WHERE beatmap_id = ?",
-            [beatmap_id]
+            [beatmapId]
         );
 
         const beatmapResult = results as Beatmap[];
@@ -149,63 +147,10 @@ export class BeatmapRepository {
         return beatmapResult[0];
     }
 
-    private async fromBeatmapIdOsuApi(beatmap_id: number): Promise<Beatmap | null> {
-        const beatmap = await this.osuApi.getBeatmap(beatmap_id);
-
-        if (beatmap === null) {
-            return null;
-        }
-
-        return osuApiBeatmapAsRippleBeatamp(beatmap);
-    }
-
-    async fromBeatmapId(beatmap_id: number): Promise<Beatmap | null> {
-        let beatmap = await this.fromBeatmapIdDatabase(beatmap_id);
-
-        if (beatmap === null) {
-            beatmap = await this.fromBeatmapIdOsuApi(beatmap_id);
-
-            if (beatmap !== null) {
-                beatmap = await this.create(
-                    beatmap.beatmap_id,
-                    beatmap.beatmapset_id,
-                    beatmap.beatmap_md5,
-                    beatmap.song_name,
-                    beatmap.ar,
-                    beatmap.od,
-                    beatmap.mode,
-                    beatmap.rating,
-                    beatmap.difficulty_std,
-                    beatmap.difficulty_taiko,
-                    beatmap.difficulty_ctb,
-                    beatmap.difficulty_mania,
-                    beatmap.max_combo,
-                    beatmap.hit_length,
-                    beatmap.bpm,
-                    beatmap.playcount,
-                    beatmap.passcount,
-                    beatmap.ranked,
-                    beatmap.latest_update,
-                    beatmap.ranked_status_freezed,
-                    beatmap.pp_100,
-                    beatmap.pp_99,
-                    beatmap.pp_98,
-                    beatmap.pp_95,
-                    beatmap.disable_pp,
-                    beatmap.file_name,
-                    beatmap.rankedby,
-                    beatmap.priv_crawler
-                )
-            }
-        }
-
-        return beatmap;
-    }
-
-    private async fromMd5Database(beatmap_md5: string): Promise<Beatmap | null> {
+    async findByMd5(beatmapMd5: string): Promise<Beatmap | null> {
         const [results, _] = await this.database.query(
             "SELECT * FROM beatmaps WHERE beatmap_md5 = ?",
-            [beatmap_md5]
+            [beatmapMd5]
         );
 
         const beatmapResult = results as Beatmap[];
@@ -215,112 +160,5 @@ export class BeatmapRepository {
         }
 
         return beatmapResult[0];
-    }
-
-    private async fromMd5OsuApi(beatmap_md5: string): Promise<Beatmap | null> {
-        const beatmap = await this.osuApi.lookupBeatmap({checksum: beatmap_md5});
-
-        if (beatmap === null) {
-            return null;
-        }
-
-        return osuApiBeatmapAsRippleBeatamp(beatmap);
-    }
-
-    async fromMd5(beatmap_md5: string): Promise<Beatmap | null> {
-        let beatmap = await this.fromMd5Database(beatmap_md5);
-
-        if (beatmap === null) {
-            beatmap = await this.fromMd5OsuApi(beatmap_md5);
-
-            if (beatmap !== null) {
-                beatmap = await this.create(
-                    beatmap.beatmap_id,
-                    beatmap.beatmapset_id,
-                    beatmap.beatmap_md5,
-                    beatmap.song_name,
-                    beatmap.ar,
-                    beatmap.od,
-                    beatmap.mode,
-                    beatmap.rating,
-                    beatmap.difficulty_std,
-                    beatmap.difficulty_taiko,
-                    beatmap.difficulty_ctb,
-                    beatmap.difficulty_mania,
-                    beatmap.max_combo,
-                    beatmap.hit_length,
-                    beatmap.bpm,
-                    beatmap.playcount,
-                    beatmap.passcount,
-                    beatmap.ranked,
-                    beatmap.latest_update,
-                    beatmap.ranked_status_freezed,
-                    beatmap.pp_100,
-                    beatmap.pp_99,
-                    beatmap.pp_98,
-                    beatmap.pp_95,
-                    beatmap.disable_pp,
-                    beatmap.file_name,
-                    beatmap.rankedby,
-                    beatmap.priv_crawler
-                )
-            }
-        }
-
-        return beatmap;
-    }
-}
-
-function osuApiModeAsInteger(mode: "osu" | "taiko" | "mania" | "fruits" ): number {
-    switch (mode) {
-        case "osu":
-            return 0;
-        case "taiko":
-            return 1;
-        case "fruits":
-            return 2;
-        case "mania":
-            return 3;
-    }
-}
-
-function makeOsuTitle(artist: string, title: string, difficulty: string): string {
-    return `${artist} - ${title} [${difficulty}]`;
-}
-
-function makeOsuFilename(artist: string, title: string, difficulty: string, creator: string): string {
-    return `${artist} - ${title} [${difficulty}] (${creator}).osu`;
-}
-
-function osuApiBeatmapAsRippleBeatamp(beatmap: OsuBeatmap.Extended.WithFailtimesBeatmapset): Beatmap {
-    return {
-        beatmap_id: beatmap.id,
-        beatmapset_id: beatmap.beatmapset_id,
-        beatmap_md5: beatmap.checksum,
-        song_name: makeOsuTitle(beatmap.beatmapset.artist, beatmap.beatmapset.title, beatmap.version),
-        ar: beatmap.ar,
-        od: beatmap.accuracy,
-        mode: osuApiModeAsInteger(beatmap.mode),
-        rating: 10,
-        difficulty_std: beatmap.difficulty_rating,
-        difficulty_taiko: beatmap.difficulty_rating,
-        difficulty_ctb: beatmap.difficulty_rating,
-        difficulty_mania: beatmap.difficulty_rating,
-        max_combo: beatmap.max_combo,
-        hit_length: beatmap.hit_length,
-        bpm: beatmap.bpm,
-        playcount: beatmap.playcount,
-        passcount: beatmap.passcount,
-        ranked: beatmap.ranked,
-        latest_update: new Date().getUTCSeconds(),
-        ranked_status_freezed: false,
-        pp_100: 0,
-        pp_99: 0,
-        pp_98: 0,
-        pp_95: 0,
-        disable_pp: false,
-        file_name: makeOsuFilename(beatmap.beatmapset.artist, beatmap.beatmapset.title, beatmap.version, beatmap.beatmapset.creator),
-        rankedby: "",
-        priv_crawler: false,
     }
 }
