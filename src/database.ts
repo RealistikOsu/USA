@@ -1,4 +1,4 @@
-import { Generated, Insertable, Selectable } from "kysely"
+import { Generated, Insertable, Selectable, Updateable } from "kysely"
 
 export interface Database {
     seasonal_bg: SeasonalBackgroundTable;
@@ -6,6 +6,7 @@ export interface Database {
     scores: ScoresTable;
     scores_relax: ScoresTable;
     scores_ap: ScoresTable;
+    beatmaps_rating: BeatmapRatingTable;
     users: UsersTable;
 }
 
@@ -68,6 +69,13 @@ export interface ScoresTable {
     playtime: number;
 }
 
+export interface BeatmapRatingTable {
+    id: Generated<number>;
+    user_id: number;
+    beatmap_md5: string;
+    rating: number;
+}
+
 export interface UsersTable {
     id: Generated<number>;
     osuver: string | null;
@@ -103,8 +111,13 @@ export interface UsersTable {
 
 export type NewBeatmap = Insertable<BeatmapsTable>;
 export type NewScore = Insertable<ScoresTable>;
+export type NewRating = Insertable<BeatmapRatingTable>;
+export type NewBeatmapRating = Insertable<BeatmapRatingTable>;
 
 export type SeasonalBackground = Selectable<SeasonalBackgroundTable>;
 export type Beatmap = Selectable<BeatmapsTable>;
 export type Score = Selectable<ScoresTable>;
+export type BeatmapRating = Selectable<BeatmapRatingTable>;
 export type User = Selectable<UsersTable>;
+
+export type UpdateBeatmap = Updateable<BeatmapsTable>;

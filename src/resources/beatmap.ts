@@ -1,5 +1,5 @@
 import { Kysely } from "kysely";
-import { Beatmap, Database, NewBeatmap } from "../database";
+import { Beatmap, Database, NewBeatmap, UpdateBeatmap } from "../database";
 
 export class BeatmapRepository {
     constructor(
@@ -28,5 +28,19 @@ export class BeatmapRepository {
             .executeTakeFirst();
 
         return beatmap !== undefined ? beatmap : null;
+    }
+
+    async updateByBeatmapId(beatmapId: number, update: UpdateBeatmap) {
+        await this.database.updateTable('beatmaps')
+            .set(update)
+            .where('beatmap_id', '=', beatmapId)
+            .execute();
+    }
+
+    async updateByBeatmapMd5(beatmapMd5: string, update: UpdateBeatmap) {
+        await this.database.updateTable('beatmaps')
+            .set(update)
+            .where('beatmap_md5', '=', beatmapMd5)
+            .execute();
     }
 }

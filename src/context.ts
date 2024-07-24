@@ -4,20 +4,24 @@ import mysql from 'mysql2';
 import { SeasonalBackgroundRepository } from './resources/seasonal_background';
 import { BeatmapService } from './services/beatmap';
 import { BeatmapRepository } from './resources/beatmap';
+import { BeatmapRatingRepository } from './resources/beatmap_rating';
 import { Kysely, MysqlDialect } from 'kysely';
 import { Database } from './database';
 import { auth } from 'osu-api-extended';
 import { UserRepository } from './resources/user';
 import { AuthenticationService } from './services/authentication';
+import { BeatmapRatingService } from './services/beatmap_rating';
 
 declare module '@fastify/request-context' {
     interface RequestContextData {
         _database: Kysely<Database>;
         _beatmapRepository: BeatmapRepository;
-        _userRepository: UserRepository;
+        _beatmapRatingRepository: BeatmapRatingRepository;
         seasonalBackgroundRepository: SeasonalBackgroundRepository;
         beatmapService: BeatmapService;
+        userRepository: UserRepository;
         authenticationService: AuthenticationService;
+        beatmapRatingService: BeatmapRatingService
     }
 }
 
@@ -57,12 +61,20 @@ export const registerContext = async (server: FastifyInstance) => {
 
         const userRepository = new UserRepository(database);
         const authenticationService = new AuthenticationService(userRepository);
+        
+        const beatmapRatingRepository = new BeatmapRatingRepository(database);
+        const beatmapRatingService = new BeatmapRatingService(
+            beatmapRatingRepository,
+            beatmapRepository,
+        );
 
         request.requestContext.set('_database', database);
         request.requestContext.set('_beatmapRepository', beatmapRepository);
-        request.requestContext.set('_userRepository', userRepository);
+        request.requestContext.set("_beatmapRatingRepository", beatmapRatingRepository);
+        request.requestContext.set('userRepository', userRepository);
         request.requestContext.set('seasonalBackgroundRepository', seasonalBackgroundRepository);
         request.requestContext.set('beatmapService', beatmapService);
         request.requestContext.set('authenticationService', authenticationService);
+        request.requestContext.set("beatmapRatingService", beatmapRatingService);
     });
 }
