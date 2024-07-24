@@ -1,5 +1,6 @@
 import { osuApiBeatmapToRippleBeatmap } from "../adapters/beatmap";
-import { Beatmap, BeatmapRepository } from "../resources/beatmap";
+import { Beatmap } from "../database";
+import { BeatmapRepository } from "../resources/beatmap";
 import { API as OsuApi } from "osu-api-v2-js";
 
 export class BeatmapService {

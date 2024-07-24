@@ -1,5 +1,5 @@
-import { Beatmap } from "../resources/beatmap";
 import { Beatmap as OsuBeatmap } from "osu-api-v2-js";
+import { Beatmap } from "../database";
 
 export function osuApiModeAsInteger(mode: "osu" | "taiko" | "fruits" | "mania"): number {
     switch (mode) {

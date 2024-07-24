@@ -1,20 +1,15 @@
-import { Connection } from "mysql2/promise";
-
-export interface SeasonalBackground {
-    id: number;
-    url: string;
-    enabled: boolean;
-}
+import { Kysely } from "kysely";
+import { Database, SeasonalBackground } from "../database";
 
 export class SeasonalBackgroundRepository {
-    constructor(private database: Connection) {}
+    constructor(private database: Kysely<Database>) {}
 
     async getSeasonalBackgrounds(enabled: boolean = true): Promise<SeasonalBackground[]> {
-        const [results, _] = await this.database.query(
-            'SELECT * FROM seasonal_bg WHERE enabled = ?',
-            [enabled],
-        );
+        const seasonalBackgrounds = await this.database.selectFrom('seasonal_bg')
+            .where('enabled', '=', true)
+            .selectAll()
+            .execute();
 
-        return results as SeasonalBackground[];
+        return seasonalBackgrounds;
     }
 }
