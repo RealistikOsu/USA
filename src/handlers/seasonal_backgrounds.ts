@@ -1,6 +1,6 @@
 import { FastifyReply, FastifyRequest } from 'fastify';
 
-export const getSeasonals = async (request: FastifyRequest, reply: FastifyReply) => {
+export const getSeasonalBackgrounds = async (request: FastifyRequest, reply: FastifyReply) => {
     const seasonalBackgroundRepository = request.requestContext.get('seasonalBackgroundRepository')!;
 
     const seasonals = await seasonalBackgroundRepository.getSeasonalBackgrounds();

@@ -1,6 +1,6 @@
 import { FastifyInstance } from "fastify";
-import { getSeasonals } from "../handlers/seasonals";
+import { getSeasonalBackgrounds } from "./handlers/seasonal_backgrounds";
 
 export const createRoutes = (server: FastifyInstance) => {
-    server.get("/web/osu-getseasonal.php", getSeasonals);
+    server.get("/web/osu-getseasonal.php", getSeasonalBackgrounds);
 }
