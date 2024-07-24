@@ -46,7 +46,7 @@ export interface BeatmapsTable {
 }
 
 export interface ScoresTable {
-    id: number;
+    id: Generated<number>;
     beatmap_md5: string;
     userid: number;
     score: number;

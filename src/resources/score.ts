@@ -45,8 +45,8 @@ export class ScoreRepository {
         const scoreId = Number(insertId);
 
         return {
-            ...score,
             id: scoreId,
+            ...score,
         };
     }
     
