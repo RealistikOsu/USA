@@ -1,5 +1,6 @@
 import { Beatmap } from "../database";
-import { response as OsuBeatmap } from "osu-api-extended/dist/types/v2_beatmap_id_details";
+import { response as OsuBeatmap } from "osu-api-extended/dist/types/v2_beatmap_id_details"; 
+import { response as OsuBeatmapset } from "osu-api-extended/dist/types/v2_beatmap_set_details";
 
 export function formatLeaderboardBeatmap(beatmap: Beatmap, scoreCount: number, rating: number): string {
     return `${beatmap.ranked}|false|${beatmap.beatmap_id}|${beatmap.beatmapset_id}|${scoreCount}|0|\n0\n${beatmap.song_name}\n${rating.toFixed(1)}`;
@@ -81,7 +82,7 @@ export function formatRippleBeatmapSongName(artist: string, title: string, diffi
 }
 
 export function formatRippleBeatmapFilename(artist: string, title: string, difficulty: string, creator: string): string {
-    return `${artist} - ${title} [${difficulty}] (${creator}).osu`;
+    return `${artist} - ${title} (${creator}) [${difficulty}].osu`;
 }
 
 export function osuApiBeatmapToRippleBeatmap(beatmap: OsuBeatmap): Beatmap {
@@ -112,6 +113,39 @@ export function osuApiBeatmapToRippleBeatmap(beatmap: OsuBeatmap): Beatmap {
         pp_95: 0,
         disable_pp: false,
         file_name: formatRippleBeatmapFilename(beatmap.beatmapset.artist, beatmap.beatmapset.title, beatmap.version, beatmap.beatmapset.creator),
+        rankedby: "",
+        priv_crawler: false,
+    }
+}
+
+export function osuApiBeatmapAndSetToRippleBeatmap(beatmapset: OsuBeatmapset, beatmap: OsuBeatmapset["beatmaps"][0]): Beatmap {
+    return {
+        beatmap_id: beatmap.id,
+        beatmapset_id: beatmap.beatmapset_id,
+        beatmap_md5: beatmap.checksum,
+        song_name: formatRippleBeatmapSongName(beatmapset.artist, beatmapset.title, beatmap.version),
+        ar: beatmap.ar,
+        od: beatmap.accuracy,
+        mode: osuApiModeAsInteger(beatmap.mode),
+        rating: 10,
+        difficulty_std: beatmap.difficulty_rating,
+        difficulty_taiko: beatmap.difficulty_rating,
+        difficulty_ctb: beatmap.difficulty_rating,
+        difficulty_mania: beatmap.difficulty_rating,
+        max_combo: beatmap.max_combo,
+        hit_length: beatmap.hit_length,
+        bpm: beatmap.bpm,
+        playcount: beatmap.playcount,
+        passcount: beatmap.passcount,
+        ranked: osuApiStatusAsRippleStatus(beatmap.ranked),
+        latest_update: new Date().getUTCSeconds(),
+        ranked_status_freezed: false,
+        pp_100: 0,
+        pp_99: 0,
+        pp_98: 0,
+        pp_95: 0,
+        disable_pp: false,
+        file_name: formatRippleBeatmapFilename(beatmapset.artist, beatmapset.title, beatmap.version, beatmapset.creator),
         rankedby: "",
         priv_crawler: false,
     }

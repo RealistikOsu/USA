@@ -74,7 +74,7 @@ export const beatmapLeaderboard = async (request: FastifyRequest<{ Querystring: 
     const beatmapResult = await beatmapService.findByBeatmapMd5(
         request.query.c,
         {
-            beatmapSetId: parseInt(request.query.s),
+            beatmapSetId: parseInt(request.query.i),
             fileName,
         },
     );

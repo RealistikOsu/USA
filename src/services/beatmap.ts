@@ -1,7 +1,6 @@
 import { v2 } from "osu-api-extended";
-import { response as OsuBeatmapset } from "osu-api-extended/dist/types/v2_beatmap_set_details";
-import { response as OsuBeatmap } from "osu-api-extended/dist/types/v2_beatmap_id_details";
-import { osuApiBeatmapToRippleBeatmap } from "../adapters/beatmap";
+import { response as _OsuBeatmapset } from "osu-api-extended/dist/types/v2_beatmap_set_details";
+import { osuApiBeatmapToRippleBeatmap, osuApiBeatmapAndSetToRippleBeatmap } from "../adapters/beatmap";
 import { Beatmap } from "../database";
 import { BeatmapRepository } from "../resources/beatmap";
 import { ErrorOr, ServiceError } from "./_common";
@@ -22,16 +21,24 @@ export interface ExtraBeatmapData {
     fileName: string;
 }
 
+interface OsuBeatmapset extends _OsuBeatmapset {
+    error?: string;
+}
+
+const OSU_MAP_NOT_FOUND_RESPONSE = "Specified beatmap couldn't be found.";
+
 export class BeatmapService {
     constructor(
         private beatmapRepository: BeatmapRepository) { }
         
     private async discoverNewBeatmapSet(beatmapSetId: number): Promise<Beatmap[]> {
         // Beatmap set discovery
-        const banchoBeatmaps = (await v2.beatmap.set.details(beatmapSetId.toString())).beatmaps;
+        const banchoBeatmapset: OsuBeatmapset = await v2.beatmap.set.details(beatmapSetId.toString());
+        const banchoBeatmaps = banchoBeatmapset.beatmaps;
+
         const existingBeatmaps = await this.beatmapRepository.fromBeatmapSetId(beatmapSetId);
 
-        if (banchoBeatmaps.length == 0) {
+        if (banchoBeatmapset.error === OSU_MAP_NOT_FOUND_RESPONSE || banchoBeatmaps.length == 0) {
             logger.debug("Beatmap set has been unsubmitted. Deleting all child difficulties", {
                 beatmapSetId: beatmapSetId,
             });
@@ -39,7 +46,7 @@ export class BeatmapService {
             return [];
         }
 
-        // Check if we have any betmaps in the database that are not in the api and delete them.
+        // Check if we have any beatmaps in the database that are not in the api and delete them.
         for (const existingBeatmap of existingBeatmaps) {
             let found = false;
             for (const banchoMap of banchoBeatmaps) {
@@ -57,9 +64,13 @@ export class BeatmapService {
         }
 
         for (const banchoMap of banchoBeatmaps) {
-            const convertedMap = osuApiBeatmapToRippleBeatmap(banchoMap as OsuBeatmap);
+            const convertedMap = osuApiBeatmapAndSetToRippleBeatmap(banchoBeatmapset, banchoMap);
             await this.beatmapRepository.createOrUpdate(convertedMap);
         }
+
+        logger.debug("Discovered new beatmap set.", {
+            beatmapSetId: beatmapSetId,
+        })
 
         return await this.beatmapRepository.fromBeatmapSetId(beatmapSetId);
     }
