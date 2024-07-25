@@ -11,17 +11,23 @@ import { auth } from 'osu-api-extended';
 import { UserRepository } from './resources/user';
 import { AuthenticationService } from './services/authentication';
 import { BeatmapRatingService } from './services/beatmap_rating';
+import { UserRelationshipRepository } from './resources/user_relationship';
+import { LeaderboardService } from './services/leaderboard';
+import { ScoreRepository } from './resources/score';
 
 declare module '@fastify/request-context' {
     interface RequestContextData {
         _database: Kysely<Database>;
         _beatmapRepository: BeatmapRepository;
         _beatmapRatingRepository: BeatmapRatingRepository;
+        _scoreRepository: ScoreRepository;
         seasonalBackgroundRepository: SeasonalBackgroundRepository;
         beatmapService: BeatmapService;
         userRepository: UserRepository;
         authenticationService: AuthenticationService;
-        beatmapRatingService: BeatmapRatingService
+        beatmapRatingService: BeatmapRatingService;
+        userRelationshipRepository: UserRelationshipRepository;
+        leaderboardService: LeaderboardService;
     }
 }
 
@@ -68,13 +74,21 @@ export const registerContext = async (server: FastifyInstance) => {
             beatmapRepository,
         );
 
+        const userRelationshipRepository = new UserRelationshipRepository(database);
+
+        const scoreRepository = new ScoreRepository(database);
+        const leaderboardService = new LeaderboardService(scoreRepository);
+
         request.requestContext.set('_database', database);
         request.requestContext.set('_beatmapRepository', beatmapRepository);
         request.requestContext.set("_beatmapRatingRepository", beatmapRatingRepository);
+        request.requestContext.set('_scoreRepository', scoreRepository);
         request.requestContext.set('userRepository', userRepository);
         request.requestContext.set('seasonalBackgroundRepository', seasonalBackgroundRepository);
         request.requestContext.set('beatmapService', beatmapService);
         request.requestContext.set('authenticationService', authenticationService);
         request.requestContext.set("beatmapRatingService", beatmapRatingService);
+        request.requestContext.set('userRelationshipRepository', userRelationshipRepository);
+        request.requestContext.set('leaderboardService', leaderboardService);
     });
 }

@@ -14,5 +14,7 @@ declare namespace NodeJS {
         readonly PERFORMANCE_SERVICE_BASE_URL: string;
         readonly BEATMAPS_SERVICE_BASE_URL: string;
         readonly BEATMAP_DOWNLOAD_MIRROR_BASE_URL: string;
+
+        readonly LOGGER_MIN_LEVEL: string;
     }
 }

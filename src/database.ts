@@ -8,15 +8,18 @@ export interface Database {
     scores_ap: ScoresTable;
     beatmaps_rating: BeatmapRatingTable;
     users: UsersTable;
+    clans: ClansTable;
+    user_clans: UserClansTable;
+    users_relationships: UserRelationshipTable;
 }
 
-export interface SeasonalBackgroundTable {
+interface SeasonalBackgroundTable {
     id: Generated<number>;
     url: string;
     enabled: boolean;
 }
 
-export interface BeatmapsTable {
+interface BeatmapsTable {
     beatmap_id: number;
     beatmapset_id: number;
     beatmap_md5: string;
@@ -47,7 +50,7 @@ export interface BeatmapsTable {
     priv_crawler: boolean;
 }
 
-export interface ScoresTable {
+interface ScoresTable {
     id: Generated<number>;
     beatmap_md5: string;
     userid: number;
@@ -61,7 +64,7 @@ export interface ScoresTable {
     katus_count: number;
     gekis_count: number;
     misses_count: number;
-    time: string;
+    time: number;
     play_mode: number;
     completed: number;
     accuracy: number;
@@ -69,14 +72,14 @@ export interface ScoresTable {
     playtime: number;
 }
 
-export interface BeatmapRatingTable {
+interface BeatmapRatingTable {
     id: Generated<number>;
     user_id: number;
     beatmap_md5: string;
     rating: number;
 }
 
-export interface UsersTable {
+interface UsersTable {
     id: Generated<number>;
     osuver: string | null;
     username: string;
@@ -109,6 +112,28 @@ export interface UsersTable {
     api_key: string;
 }
 
+interface ClansTable {
+    id: Generated<number>;
+    name: string;
+    description: string;
+    icon: string;
+    tag: string;
+    mlimit: number;
+}
+
+interface UserClansTable {
+    id: Generated<number>;
+    user: number;
+    clan: number;
+    perms: number;
+}
+
+interface UserRelationshipTable {
+    id: Generated<number>;
+    user1: number;
+    user2: number;
+}
+
 export type NewBeatmap = Insertable<BeatmapsTable>;
 export type NewScore = Insertable<ScoresTable>;
 export type NewRating = Insertable<BeatmapRatingTable>;
@@ -119,5 +144,8 @@ export type Beatmap = Selectable<BeatmapsTable>;
 export type Score = Selectable<ScoresTable>;
 export type BeatmapRating = Selectable<BeatmapRatingTable>;
 export type User = Selectable<UsersTable>;
+export type Clan = Selectable<ClansTable>;
+export type UserClan = Selectable<UserClansTable>;
+export type UserRelationship = Selectable<UserRelationshipTable>;
 
 export type UpdateBeatmap = Updateable<BeatmapsTable>;

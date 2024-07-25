@@ -4,6 +4,8 @@ import { osuApiStatusFromDirectStatus } from "../adapters/beatmap";
 import { osuDirectBeatmapsetCardFromCheesegullBeatmapset, osuDirectBeatmapsetFromCheesegullBeatmapset } from "../adapters/osu_direct";
 import { HttpStatusCode } from "axios";
 import { AuthenticationService } from "../services/authentication";
+import { Beatmap } from "../database";
+import { Logger } from "../logger";
 
 interface AuthenticateParameters {
     u: string;
@@ -24,6 +26,10 @@ const DEFAULT_QUERIES = [
     'Top Rated',
     'Most Played',
 ]
+
+const logger: Logger = new Logger({
+    name: "OsuDirectHandler",
+});
 
 // TODO: move this into a hook or something
 async function userIsAuthenticated(query: AuthenticateParameters, authenticationService: AuthenticationService): Promise<boolean> {
@@ -49,7 +55,7 @@ export const osuDirectSearch = async (request: FastifyRequest<{ Querystring: Osu
         return;
     }
     
-    const query = request.query.q;
+    const query = decodeURI(request.query.q);
     const rankedStatus = parseInt(request.query.r);
     const mode = parseInt(request.query.m);
     const pageNumber = parseInt(request.query.p);
@@ -100,7 +106,20 @@ export const osuDirectBeatmapsetCard = async (request: FastifyRequest<{ Querystr
     const beatmapId = request.query.b !== undefined ? parseInt(request.query.b) : null;
 
     if (beatmapId != null && beatmapsetId === null) {
-        const beatmap = await beatmapService.findByBeatmapId(beatmapId);
+        const beatmapResult = await beatmapService.findByBeatmapId(beatmapId);
+
+        if (typeof beatmapResult === "string") {
+            logger.warn("Failed to find beatmap", {
+                error: beatmapResult,
+            });
+
+            reply.code(HttpStatusCode.NotFound);
+            reply.send();
+            return;
+        }
+    
+        const beatmap = beatmapResult as Beatmap;
+
         beatmapsetId = beatmap?.beatmapset_id ?? null;
     }
 

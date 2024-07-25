@@ -2,10 +2,10 @@ import { configDotenv } from 'dotenv';
 configDotenv();
 
 import { createApp } from './app';
-import { Logger, ILogObj } from "tslog";
+import { Logger } from "./logger";
 
 async function main() {
-    const logger: Logger<ILogObj> = new Logger();
+    const logger: Logger = new Logger();
     const server = await createApp();
 
     server.listen({ port: parseInt(process.env.SERVER_PORT) }, (err, address) => {

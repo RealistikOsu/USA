@@ -3,7 +3,7 @@ The TypeScript alternative for the [USSR](https://github.com/RealistikOsu/USSR) 
 
 ## Functions
 The USA score server handles the following functionality within the Ripple osu! custom server stack:
-- [ ] Beatmap Leaderboards
+- [x] Beatmap Leaderboards
 - [ ] Score Submission
 - [x] osu!direct Beatmap Search
 - [x] Seasonal Backgrounds
@@ -12,3 +12,4 @@ The USA score server handles the following functionality within the Ripple osu! 
 - [x] Beatmap Ratings
 - [ ] Beatmap Comments
 - [ ] Client Errors
+- [ ] Friends List
