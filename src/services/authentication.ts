@@ -42,7 +42,7 @@ export class AuthenticationService {
         ]
     
         const validPossibilities = possibilities.filter(a => a.username !== undefined && a.password !== undefined);
-        if (validPossibilities.length === 0) {
+        if (validPossibilities.length !== 1) {
             return null;
         }
 
