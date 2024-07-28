@@ -64,8 +64,29 @@ export class BeatmapService {
         }
 
         for (const banchoMap of banchoBeatmaps) {
-            const convertedMap = osuApiBeatmapAndSetToRippleBeatmap(banchoBeatmapset, banchoMap);
-            await this.beatmapRepository.createOrUpdate(convertedMap);
+            const updatedBeatmap = osuApiBeatmapAndSetToRippleBeatmap(banchoBeatmapset, banchoMap);
+            
+            // Check if the old map is here.
+            let oldBeatmap;
+            for (const existingBeatmap of existingBeatmaps) {
+                if (existingBeatmap.beatmap_id === banchoMap.id) {
+                    oldBeatmap = existingBeatmap;
+                    break;
+                }
+            }
+
+            if (oldBeatmap !== undefined) {
+                updatedBeatmap.playcount = oldBeatmap.playcount;
+                updatedBeatmap.passcount = oldBeatmap.passcount;
+                updatedBeatmap.rating = oldBeatmap.rating;
+
+                if (oldBeatmap.ranked_status_freezed) {
+                    updatedBeatmap.ranked_status_freezed = true;
+                    updatedBeatmap.ranked = oldBeatmap.ranked;
+                }
+            }
+
+            await this.beatmapRepository.createOrUpdate(updatedBeatmap);
         }
 
         logger.debug("Discovered new beatmap set.", {
@@ -122,6 +143,16 @@ export class BeatmapService {
                 beatmapMd5: beatmap.beatmap_md5,
                 newBeatmapMd5: updatedBeatmap.beatmap_md5,
             })
+
+            updatedBeatmap.playcount = beatmap.playcount;
+            updatedBeatmap.passcount = beatmap.passcount;
+            updatedBeatmap.rating = beatmap.rating;
+
+            if (beatmap.ranked_status_freezed) {
+                updatedBeatmap.ranked_status_freezed = true;
+                updatedBeatmap.ranked = beatmap.ranked;
+            }
+
             await this.beatmapRepository.createOrUpdate(updatedBeatmap);
             return ServiceError.BEATMAP_UPDATE_REQUIRED;
         }
