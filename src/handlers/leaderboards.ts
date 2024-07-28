@@ -31,26 +31,6 @@ interface BeatmapLeaderboardParameters {
     a: string;
 }
 
-async function authenticateUser(
-    query: BeatmapLeaderboardParameters,
-    authenticationService: AuthenticationService,
-    userRepository: UserRepository
-): Promise<User | null> {
-    if (query.us === undefined || query.ha === undefined) {
-        return null;
-    }
-
-    const authResult = await authenticationService.canAuthenticateUser(
-        query.us,
-        query.ha,
-    )
-
-    if (!authResult) {
-        return null;
-    }
-    return await userRepository.findByUsernameSafe(usernameToUsernameSafe(query.us));
-}
-
 export const beatmapLeaderboard = async (request: FastifyRequest<{ Querystring: BeatmapLeaderboardParameters }>, reply: FastifyReply) => {
     const authenticationService = request.requestContext.get('authenticationService')!;
     const userRepository = request.requestContext.get('userRepository')!;
@@ -58,7 +38,7 @@ export const beatmapLeaderboard = async (request: FastifyRequest<{ Querystring: 
     const userRelationshipRepository = request.requestContext.get('userRelationshipRepository')!;
     const leaderboardService = request.requestContext.get('leaderboardService')!;
 
-    const authenticatedUser = await authenticateUser(request.query, authenticationService, userRepository);
+    const authenticatedUser = await authenticationService.authenticateUser(request.query, userRepository);
     if (!authenticatedUser) {
         reply.code(HttpStatusCode.Unauthorized);
         reply.send();

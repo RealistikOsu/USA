@@ -1,38 +1,10 @@
 import { FastifyReply, FastifyRequest } from 'fastify';
-import { UserRepository } from '../resources/user';
-import { AuthenticationService } from '../services/authentication';
-import { User } from '../database';
-import { usernameToUsernameSafe } from '../adapters/user';
+import { AuthenticateRequestParameters } from '../services/authentication';
 import { HttpStatusCode } from 'axios';
 
-interface AuthenticateParameters {
-    u: string;
-    h: string;
-}
-
-interface BeatmapRatingParameters extends AuthenticateParameters {
+interface BeatmapRatingParameters extends AuthenticateRequestParameters {
     c: string;
     rating?: string;
-}
-
-async function authenticateUser(
-    query: AuthenticateParameters,
-    authenticationService: AuthenticationService,
-    userRepository: UserRepository
-): Promise<User | null> {
-    if (query.u === undefined || query.h === undefined) {
-        return null;
-    }
-
-    const authResult = await authenticationService.canAuthenticateUser(
-        query.u,
-        query.h,
-    )
-
-    if (!authResult) {
-        return null;
-    }
-    return await userRepository.findByUsernameSafe(usernameToUsernameSafe(query.u));
 }
 
 export const getBeatmapRatings = async (request: FastifyRequest<{ Querystring: BeatmapRatingParameters }>, reply: FastifyReply) => {
@@ -40,7 +12,7 @@ export const getBeatmapRatings = async (request: FastifyRequest<{ Querystring: B
     const userRepository = request.requestContext.get("userRepository")!;
     const authenticationService = request.requestContext.get("authenticationService")!;
 
-    const user = await authenticateUser(request.query, authenticationService, userRepository);
+    const user = await authenticationService.authenticateUser(request.query, userRepository);
     if (user === null) {
         reply.code(HttpStatusCode.Unauthorized);
         reply.send();

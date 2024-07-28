@@ -3,7 +3,6 @@ import { searchCheesegullBeatmapsets, BeatmapSearchParameters, getCheesegullBeat
 import { osuApiStatusFromDirectStatus } from "../adapters/beatmap";
 import { osuDirectBeatmapsetCardFromCheesegullBeatmapset, osuDirectBeatmapsetFromCheesegullBeatmapset } from "../adapters/osu_direct";
 import { HttpStatusCode } from "axios";
-import { AuthenticationService } from "../services/authentication";
 import { Beatmap } from "../database";
 import { Logger } from "../logger";
 
@@ -31,25 +30,12 @@ const logger: Logger = new Logger({
     name: "OsuDirectHandler",
 });
 
-// TODO: move this into a hook or something
-async function userIsAuthenticated(query: AuthenticateParameters, authenticationService: AuthenticationService): Promise<boolean> {
-    if (query.u === undefined || query.h === undefined) {
-        return false;
-    }
-
-    const authenticatedUser = await authenticationService.canAuthenticateUser(query.u, query.h);
-    if (!authenticatedUser) {
-        return false;
-    }
-
-    return true;
-}
-
 export const osuDirectSearch = async (request: FastifyRequest<{ Querystring: OsuDirectSearchParameters }>, reply: FastifyReply) => {
     const authenticationService = request.requestContext.get('authenticationService')!;
+    const userRepository = request.requestContext.get('userRepository')!;
 
-    const authenticatedUser = await userIsAuthenticated(request.query, authenticationService);
-    if (!authenticatedUser) {
+    const authenticatedUser = await authenticationService.authenticateUser(request.query, userRepository);
+    if (authenticatedUser === null) {
         reply.code(HttpStatusCode.Unauthorized);
         reply.send();
         return;
@@ -93,10 +79,11 @@ interface OsuDirectBeatmapCardParameters extends AuthenticateParameters {
 
 export const osuDirectBeatmapsetCard = async (request: FastifyRequest<{ Querystring: OsuDirectBeatmapCardParameters }>, reply: FastifyReply) => {
     const authenticationService = request.requestContext.get('authenticationService')!;
+    const userRepository = request.requestContext.get('userRepository')!;
     const beatmapService = request.requestContext.get('beatmapService')!;
 
-    const authenticatedUser = await userIsAuthenticated(request.query, authenticationService);
-    if (!authenticatedUser) {
+    const authenticatedUser = await authenticationService.authenticateUser(request.query, userRepository);
+    if (authenticatedUser === null) {
         reply.code(HttpStatusCode.Unauthorized);
         reply.send();
         return;

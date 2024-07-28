@@ -13,3 +13,5 @@ The USA score server handles the following functionality within the Ripple osu! 
 - [ ] Beatmap Comments
 - [ ] Client Errors
 - [ ] Friends List
+- [ ] Favourite maps
+- [ ] /web/osusession.php
