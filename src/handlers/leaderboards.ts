@@ -1,8 +1,5 @@
 import { FastifyReply, FastifyRequest } from "fastify";
-import { usernameToUsernameSafe } from "../adapters/user";
-import { AuthenticationService } from "../services/authentication";
-import { UserRepository } from "../resources/user";
-import { Beatmap, User } from "../database";
+import { Beatmap } from "../database";
 import { HttpStatusCode } from "axios";
 import { ServiceError } from "../services/_common";
 import { formatLeaderboardBeatmap, hasLeaderboard } from "../adapters/beatmap";
