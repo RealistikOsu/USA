@@ -11,6 +11,7 @@ import { auth } from 'osu-api-extended';
 import { UserRepository } from './resources/user';
 import { AuthenticationService } from './services/authentication';
 import { BeatmapRatingService } from './services/beatmap_rating';
+import { UserRelationshipService } from './services/user_relationship';
 import { UserRelationshipRepository } from './resources/user_relationship';
 import { LeaderboardService } from './services/leaderboard';
 import { ScoreRepository } from './resources/score';
@@ -28,6 +29,7 @@ declare module '@fastify/request-context' {
         beatmapRatingService: BeatmapRatingService;
         userRelationshipRepository: UserRelationshipRepository;
         leaderboardService: LeaderboardService;
+        userRelationshipService: UserRelationshipService;
     }
 }
 
@@ -75,6 +77,7 @@ export const registerContext = async (server: FastifyInstance) => {
         );
 
         const userRelationshipRepository = new UserRelationshipRepository(database);
+        const userRelationshipService = new UserRelationshipService(userRelationshipRepository);
 
         const scoreRepository = new ScoreRepository(database);
         const leaderboardService = new LeaderboardService(scoreRepository);
@@ -90,5 +93,6 @@ export const registerContext = async (server: FastifyInstance) => {
         request.requestContext.set("beatmapRatingService", beatmapRatingService);
         request.requestContext.set('userRelationshipRepository', userRelationshipRepository);
         request.requestContext.set('leaderboardService', leaderboardService);
+        request.requestContext.set("userRelationshipService", userRelationshipService);
     });
 }

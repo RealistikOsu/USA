@@ -4,6 +4,7 @@ import { downloadBeatmapset, osuDirectBeatmapsetCard, osuDirectSearch } from "./
 import { getBeatmapRatings } from "./handlers/beatmap_ratings";
 import { beatmapLeaderboard } from "./handlers/leaderboards";
 import { getBanchoConnect } from "./handlers/bancho_connect";
+import { getUserFriends } from "./handlers/user_relationships";
 
 export const createRoutes = (server: FastifyInstance) => {
     server.get("/web/osu-getseasonal.php", getSeasonalBackgrounds);
@@ -17,4 +18,7 @@ export const createRoutes = (server: FastifyInstance) => {
     server.get("/web/osu-osz2-getscores.php", beatmapLeaderboard);
 
     server.get("/web/bancho_connect.php", getBanchoConnect);
+
+    server.get("/web/osu-getfriends.php", getUserFriends);
+
 }
