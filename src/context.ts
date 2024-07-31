@@ -24,6 +24,8 @@ import { ReplayService } from "./services/replay";
 import { ScoreService } from "./services/score";
 import { UserFavouriteService } from "./services/user_favourite";
 import { UserRelationshipService } from "./services/user_relationship";
+import { UserService } from "./services/user";
+import { BeatmapPlaycountRepository } from "./resources/beatmap_playcount";
 
 declare module "@fastify/request-context" {
     interface RequestContextData {
@@ -46,6 +48,8 @@ declare module "@fastify/request-context" {
         userFavouriteRepository: UserFavouriteRepository;
         userFavouriteService: UserFavouriteService;
         scoreService: ScoreService;
+        userService: UserService;
+        beatmapPlaycountRepository: BeatmapPlaycountRepository;
     }
 }
 
@@ -86,6 +90,7 @@ export const registerContext = async (server: FastifyInstance) => {
         const beatmapService = new BeatmapService(beatmapRepository);
 
         const userRepository = new UserRepository(database);
+        const userService = new UserService(userRepository);
         const authenticationService = new AuthenticationService(userRepository);
 
         const beatmapRatingRepository = new BeatmapRatingRepository(database);
@@ -123,6 +128,8 @@ export const registerContext = async (server: FastifyInstance) => {
         const userFavouriteService = new UserFavouriteService(
             userFavouriteRepository
         );
+
+        const beatmapPlaycountRepository = new BeatmapPlaycountRepository(database);
 
         request.requestContext.set("_database", database);
         request.requestContext.set("_beatmapRepository", beatmapRepository);
@@ -167,5 +174,7 @@ export const registerContext = async (server: FastifyInstance) => {
             userFavouriteService
         );
         request.requestContext.set("scoreService", scoreService);
+        request.requestContext.set("userService", userService);
+        request.requestContext.set("beatmapPlaycountRepository", beatmapPlaycountRepository);
     });
 };

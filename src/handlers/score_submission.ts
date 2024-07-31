@@ -2,6 +2,10 @@ import cryptian from "cryptian";
 import { FastifyRequest } from "fastify";
 
 import { Beatmap } from "../database";
+import { calculateAccuracy, OsuMode, relaxTypeFromMods } from "../adapters/osu";
+import { calculatePerformance } from "../adapters/performance";
+import { calculateScoreStatusForUser } from "../adapters/score";
+import { getCurrentUnixTimestamp } from "../adapters/datetime";
 
 interface FormData {
     fields: ScoreSubmissionFormFields;
@@ -71,7 +75,7 @@ interface ScoreData {
     rank: string;
     mods: number;
     passed: boolean;
-    mode: number;
+    mode: OsuMode;
     // some unknown number here, maybe timestamp?
     osuVersion: string;
 }
@@ -118,7 +122,7 @@ function decryptScoreSubmissionData(formData: FormData): ScoreSubmissionData {
             rank: scoreDataArray[12],
             mods: parseInt(scoreDataArray[13]),
             passed: scoreDataArray[14] === "True",
-            mode: parseInt(scoreDataArray[15]),
+            mode: parseInt(scoreDataArray[15]) as OsuMode,
             // skipped value here
             osuVersion: scoreDataArray[17],
             // skipped value here
@@ -134,6 +138,9 @@ export const submitScore = async (
     const authenticationService = request.requestContext.get(
         "authenticationService"
     )!;
+    const userService = request.requestContext.get("userService")!;
+    const scoreService = request.requestContext.get("scoreService")!;
+    const beatmapPlaycountRepository = request.requestContext.get("beatmapPlaycountRepository")!;
 
     const formData = await getFormData(request);
     const { scoreData, clientHash } = decryptScoreSubmissionData(formData);
@@ -155,7 +162,74 @@ export const submitScore = async (
 
     const beatmap = beatmapResult as Beatmap;
 
-    const accuracy = calculateAccuracy();
+    const accuracy = calculateAccuracy(
+        scoreData.count300s,
+        scoreData.count100s,
+        scoreData.count50s,
+        scoreData.countGekis,
+        scoreData.countKatus,
+        scoreData.countMisses,
+        scoreData.mode,
+    );
+    
+    // TODO: do all of this in a transaction
+
+    await userService.updateLatestActivityToCurrentTime(authenticatedUser.id);
+
+    // TODO: check mods are ranked
+    // TODO: check user-agent
+    // TODO: check "conflicting" mods
+    // TODO: lock all logic below by score checksum (requires adding checksum to scores)
+    // TODO: check if score with current checksum exists (^)
+
+    // TODO: do passed objects
+    const performanceResult = await calculatePerformance(
+        beatmap.beatmap_id,
+        scoreData.mode,
+        scoreData.mods,
+        scoreData.maxCombo,
+        accuracy,
+        scoreData.countMisses,
+    );
+
+    const relaxType = relaxTypeFromMods(scoreData.mods);
+    const exited = formData.fields.x == '1';
+    const failed = !scoreData.passed && !exited;
+
+    const previousBest = await scoreService.findBestByUserIdAndBeatmapMd5(authenticatedUser.id, beatmap.beatmap_md5, scoreData.mode, relaxType);
+    const scoreStatus = calculateScoreStatusForUser(scoreData.score, performanceResult.pp, failed, exited, previousBest?.score, previousBest?.pp);
+
+    const timeElapsed = scoreData.passed ? parseInt(formData.fields.st) : parseInt(formData.fields.ft);
+
+    const score = await scoreService.create(
+        {
+            beatmap_md5: beatmap.beatmap_md5,
+            userid: authenticatedUser.id,
+            score: scoreData.score,
+            max_combo: scoreData.maxCombo,
+            full_combo: scoreData.fullCombo,
+            mods: scoreData.mods,
+            "300_count": scoreData.count300s,
+            "100_count": scoreData.count100s,
+            "50_count": scoreData.count50s,
+            katus_count: scoreData.countKatus,
+            gekis_count: scoreData.countGekis,
+            misses_count: scoreData.countMisses,
+            time: getCurrentUnixTimestamp(),
+            play_mode: scoreData.mode,
+            completed: scoreStatus,
+            accuracy: accuracy,
+            pp: performanceResult.pp,
+            playtime: timeElapsed,
+        },
+        relaxType,
+    );
+
+    if (previousBest !== null) {
+        await scoreService.updateScoreStatusToSubmitted(previousBest.id, relaxType);
+    }
+
+    await beatmapPlaycountRepository.createOrIncrement(authenticatedUser.id, beatmap.beatmap_id, scoreData.mode);
 };
 
 function beatmapErrorResponse() {

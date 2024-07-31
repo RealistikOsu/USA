@@ -1,6 +1,6 @@
 import { Kysely } from "kysely";
 
-import { Database, User } from "../database";
+import { Database, UpdateUser, User } from "../database";
 
 export class UserRepository {
     constructor(private database: Kysely<Database>) {}
@@ -23,5 +23,13 @@ export class UserRepository {
             .executeTakeFirst();
 
         return user !== undefined ? user : null;
+    }
+
+    async updateUserById(userId: number, update: UpdateUser) {
+        await this.database
+            .updateTable('users')
+            .set(update)
+            .where('id', '=', userId)
+            .execute();
     }
 }

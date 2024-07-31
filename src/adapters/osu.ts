@@ -97,6 +97,20 @@ export function calculateAccuracy(
         case 1: {
             // taiko
             const totalHits = count300s + count100s + countMisses;
+
+            return 100.0 * ((count100s * 0.5) + count300s) / totalHits;
+        }
+        case 2: {
+            // catch
+            const totalHits = count300s + count100s + count50s + countKatus + countMisses;
+
+            return 100.0 * ((count300s + count100s + count50s)) / totalHits;
+        }
+        case 3: {
+            // mania
+            const totalHits = count300s + count100s + count50s + countGekis + countKatus + countMisses;
+
+            return 100.0 * ((count50s * 50.0) + (count100s * 100.0) + (countKatus * 200.0) + ((count300s + countGekis) * 300)) / (totalHits * 300.0);
         }
     }
 }

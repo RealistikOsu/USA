@@ -1,7 +1,7 @@
 import { Kysely, sql } from "kysely";
 
 import { OsuMode, RelaxType, scoresTableFromRelaxType } from "../adapters/osu";
-import { Database, NewScore, Score } from "../database";
+import { Database, NewScore, Score, UpdateScore } from "../database";
 
 export interface ScoreWithRankAndUsername extends Score {
     rank: number;
@@ -48,6 +48,31 @@ export class ScoreRepository {
             id: scoreId,
             ...score,
         };
+    }
+
+    async update(scoreId: number, score: UpdateScore, relaxType: RelaxType) {
+        const table = scoresTableFromRelaxType(relaxType);
+
+        await this.database
+            .updateTable(table)
+            .set(score)
+            .where('id', '=', scoreId)
+            .execute();
+    }
+
+    async findBestByUserIdAndBeatmapMd5(userId: number, beatmapMd5: string, mode: OsuMode, relaxType: RelaxType): Promise<Score | null> {
+        const table = scoresTableFromRelaxType(relaxType);
+
+        const score = await this.database
+            .selectFrom(table)
+            .selectAll()
+            .where('userid', '=', userId)
+            .where('beatmap_md5', '=', beatmapMd5)
+            .where('play_mode', '=', mode)
+            .where('completed', '=', 3)
+            .executeTakeFirst();
+
+        return score !== undefined ? score : null;
     }
 
     async findByUserIdWithRankAndUsername(

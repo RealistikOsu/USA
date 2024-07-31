@@ -1,6 +1,7 @@
 import { Generated, Insertable, Selectable, Updateable } from "kysely";
 
 import { OsuMode } from "./adapters/osu";
+import { ScoreStatus } from "./adapters/score";
 
 export interface Database {
     seasonal_bg: SeasonalBackgroundTable;
@@ -77,7 +78,7 @@ interface ScoresTable {
     misses_count: number;
     time: number;
     play_mode: OsuMode;
-    completed: number;
+    completed: ScoreStatus;
     accuracy: number;
     pp: number;
     playtime: number;
@@ -268,3 +269,5 @@ export type BeatmapComment = Selectable<BeatmapCommentsTable>;
 export type UpdateBeatmap = Updateable<BeatmapsTable>;
 export type UpdateUserBeatmapPlaycount = Updateable<UserBeatmapPlaycountTable>;
 export type UpdateUserStats = Updateable<UsersStatsTable>;
+export type UpdateUser = Updateable<UsersTable>;
+export type UpdateScore = Updateable<ScoresTable>;

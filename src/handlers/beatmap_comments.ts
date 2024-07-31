@@ -101,7 +101,7 @@ async function postBeatmapCommentResponse(
             var column = "replay_id";
             var value = replayId;
 
-            const isScoreOwner = await scoreService.verifyScoreOwnership(
+            const isScoreOwner = await scoreService.scoreBelongsToUser(
                 replayId,
                 user.id
             );

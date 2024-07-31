@@ -1,10 +1,12 @@
-import { approximateRelaxTypeFromScoreId } from "../adapters/osu";
+import { approximateRelaxTypeFromScoreId, OsuMode, RelaxType } from "../adapters/osu";
+import { ScoreStatus } from "../adapters/score";
+import { NewScore, Score } from "../database";
 import { ScoreRepository } from "../resources/score";
 
 export class ScoreService {
     constructor(private scoreRepository: ScoreRepository) {}
 
-    async verifyScoreOwnership(
+    async scoreBelongsToUser(
         scoreId: number,
         userId: number
     ): Promise<boolean> {
@@ -18,5 +20,23 @@ export class ScoreService {
         }
 
         return score.userid === userId;
+    }
+
+    async findBestByUserIdAndBeatmapMd5(userId: number, beatmapMd5: string, mode: OsuMode, relaxType: RelaxType): Promise<Score | null> {
+        const score = await this.scoreRepository.findBestByUserIdAndBeatmapMd5(userId, beatmapMd5, mode, relaxType);
+        return score;
+    }
+
+    async create(score: NewScore, relaxType: RelaxType): Promise<Score> {
+        const createdScore = await this.scoreRepository.create(score, relaxType);
+        return createdScore;
+    }
+
+    async updateScoreStatusToSubmitted(scoreId: number, relaxType: RelaxType) {
+        await this.scoreRepository.update(
+            scoreId,
+            { completed: ScoreStatus.SUBMITTED },
+            relaxType,
+        );
     }
 }

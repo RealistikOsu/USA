@@ -22,7 +22,7 @@ const performanceServiceInstance = axios.create({
     baseURL: process.env.PERFORMANCE_SERVICE_BASE_URL,
 });
 
-async function makePerformanceRequest(
+async function requestPerformances(
     requests: PerformanceRequest[]
 ): Promise<PerformanceResult[]> {
     const response = await performanceServiceInstance.post(
@@ -36,14 +36,14 @@ async function makePerformanceRequest(
     return response.data;
 }
 
-export async function getPerformanceSingle(
+export async function calculatePerformance(
     beatmap_id: number,
     mode: number,
     mods: number,
     max_combo: number,
     accuracy: number,
     miss_count: number,
-    passed_objects: number
+    passed_objects?: number,
 ): Promise<PerformanceResult> {
     const request: PerformanceRequest = {
         beatmap_id,
@@ -55,12 +55,12 @@ export async function getPerformanceSingle(
         passed_objects,
     };
 
-    const responses = await makePerformanceRequest([request]);
+    const responses = await requestPerformances([request]);
     return responses[0];
 }
 
-export async function getPerformanceBatch(
+export async function calculatePerformances(
     requests: PerformanceRequest[]
 ): Promise<PerformanceResult[]> {
-    return makePerformanceRequest(requests);
+    return requestPerformances(requests);
 }
