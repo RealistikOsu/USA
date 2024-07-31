@@ -2,6 +2,7 @@ import { response as OsuBeatmap } from "osu-api-extended/dist/types/v2_beatmap_i
 import { response as OsuBeatmapset } from "osu-api-extended/dist/types/v2_beatmap_set_details";
 
 import { Beatmap } from "../database";
+import { getCurrentUnixTimestamp } from "./datetime";
 
 export function formatLeaderboardBeatmap(
     beatmap: Beatmap,
@@ -123,7 +124,7 @@ export function osuApiBeatmapToRippleBeatmap(beatmap: OsuBeatmap): Beatmap {
         playcount: beatmap.playcount,
         passcount: beatmap.passcount,
         ranked: osuApiStatusAsRippleStatus(beatmap.ranked),
-        latest_update: new Date().getUTCSeconds(),
+        latest_update: getCurrentUnixTimestamp(),
         ranked_status_freezed: false,
         pp_100: 0,
         pp_99: 0,
@@ -168,7 +169,7 @@ export function osuApiBeatmapAndSetToRippleBeatmap(
         playcount: beatmap.playcount,
         passcount: beatmap.passcount,
         ranked: osuApiStatusAsRippleStatus(beatmap.ranked),
-        latest_update: new Date().getUTCSeconds(),
+        latest_update: getCurrentUnixTimestamp(),
         ranked_status_freezed: false,
         pp_100: 0,
         pp_99: 0,
