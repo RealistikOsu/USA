@@ -3,22 +3,22 @@ import { FastifyRequest } from "fastify";
 import { AuthenticateRequestParameters } from "../services/authentication";
 
 export const getBanchoConnect = async (
-  request: FastifyRequest<{ Querystring: AuthenticateRequestParameters }>
+    request: FastifyRequest<{ Querystring: AuthenticateRequestParameters }>
 ) => {
-  const authenticationService = request.requestContext.get(
-    "authenticationService"
-  )!;
+    const authenticationService = request.requestContext.get(
+        "authenticationService"
+    )!;
 
-  const user = await authenticationService.authenticateUserFromQuery(
-    request.query
-  );
-  if (user === null) {
-    return createUnauthorisedResponse();
-  }
+    const user = await authenticationService.authenticateUserFromQuery(
+        request.query
+    );
+    if (user === null) {
+        return createUnauthorisedResponse();
+    }
 
-  return user.country;
+    return user.country;
 };
 
 function createUnauthorisedResponse(): string {
-  return "error: pass\n";
+    return "error: pass\n";
 }

@@ -5,12 +5,12 @@ import { registerContext } from "./context";
 import { createRoutes } from "./routes";
 
 export const createApp = async () => {
-  const server = fastify();
+    const server = fastify();
 
-  server.register(fastifyMultipart);
+    server.register(fastifyMultipart);
 
-  await registerContext(server);
-  createRoutes(server);
+    await registerContext(server);
+    createRoutes(server);
 
-  return server;
+    return server;
 };
