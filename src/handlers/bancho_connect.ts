@@ -1,18 +1,24 @@
-import { FastifyReply, FastifyRequest } from 'fastify';
-import { AuthenticateRequestParameters } from '../services/authentication';
+import { FastifyRequest } from "fastify";
 
-export const getBanchoConnect = async (request: FastifyRequest<{ Querystring: AuthenticateRequestParameters}>, reply: FastifyReply) => {
-    const userRepository = request.requestContext.get("userRepository")!;
-    const authenticationService = request.requestContext.get("authenticationService")!;
+import { AuthenticateRequestParameters } from "../services/authentication";
 
-    const user = await authenticationService.authenticateUser(request.query, userRepository);
-    if (user === null) {
-        return createUnauthorisedResponse();
-    }
+export const getBanchoConnect = async (
+  request: FastifyRequest<{ Querystring: AuthenticateRequestParameters }>
+) => {
+  const authenticationService = request.requestContext.get(
+    "authenticationService"
+  )!;
 
-    return user.country;
-}
+  const user = await authenticationService.authenticateUserFromQuery(
+    request.query
+  );
+  if (user === null) {
+    return createUnauthorisedResponse();
+  }
 
-function createUnauthorisedResponse(): string { 
-    return "error: pass\n"
+  return user.country;
 };
+
+function createUnauthorisedResponse(): string {
+  return "error: pass\n";
+}

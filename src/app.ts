@@ -1,12 +1,16 @@
+import fastifyMultipart from "@fastify/multipart";
 import fastify from "fastify";
-import { createRoutes } from "./routes";
+
 import { registerContext } from "./context";
+import { createRoutes } from "./routes";
 
 export const createApp = async () => {
-    const server = fastify();
+  const server = fastify();
 
-    await registerContext(server);
-    createRoutes(server);
+  server.register(fastifyMultipart);
 
-    return server;
-}
+  await registerContext(server);
+  createRoutes(server);
+
+  return server;
+};

@@ -1,132 +1,154 @@
-import { FastifyReply, FastifyRequest } from "fastify";
-import { searchCheesegullBeatmapsets, BeatmapSearchParameters, getCheesegullBeatmapset } from "../adapters/cheesegull";
-import { osuApiStatusFromDirectStatus } from "../adapters/beatmap";
-import { osuDirectBeatmapsetCardFromCheesegullBeatmapset, osuDirectBeatmapsetFromCheesegullBeatmapset } from "../adapters/osu_direct";
 import { HttpStatusCode } from "axios";
+import { FastifyReply, FastifyRequest } from "fastify";
+
+import { osuApiStatusFromDirectStatus } from "../adapters/beatmap";
+import {
+  BeatmapSearchParameters,
+  getCheesegullBeatmapset,
+  searchCheesegullBeatmapsets,
+} from "../adapters/cheesegull";
+import {
+  osuDirectBeatmapsetCardFromCheesegullBeatmapset,
+  osuDirectBeatmapsetFromCheesegullBeatmapset,
+} from "../adapters/osu_direct";
 import { Beatmap } from "../database";
 import { Logger } from "../logger";
 
 interface AuthenticateParameters {
-    u: string;
-    h: string;
+  u: string;
+  h: string;
 }
 
 interface OsuDirectSearchParameters extends AuthenticateParameters {
-    r: string;
-    q: string;
-    m: string;
-    p: string;
+  r: string;
+  q: string;
+  m: string;
+  p: string;
 }
 
 const DEFAULT_MODE = -1;
 const DEFAULT_RANKED_STATUS = 4;
-const DEFAULT_QUERIES = [
-    'Newest',
-    'Top Rated',
-    'Most Played',
-]
+const DEFAULT_QUERIES = ["Newest", "Top Rated", "Most Played"];
 
 const logger: Logger = new Logger({
-    name: "OsuDirectHandler",
+  name: "OsuDirectHandler",
 });
 
-export const osuDirectSearch = async (request: FastifyRequest<{ Querystring: OsuDirectSearchParameters }>, reply: FastifyReply) => {
-    const authenticationService = request.requestContext.get('authenticationService')!;
-    const userRepository = request.requestContext.get('userRepository')!;
+export const osuDirectSearch = async (
+  request: FastifyRequest<{ Querystring: OsuDirectSearchParameters }>,
+  reply: FastifyReply
+) => {
+  const authenticationService = request.requestContext.get(
+    "authenticationService"
+  )!;
 
-    const authenticatedUser = await authenticationService.authenticateUser(request.query, userRepository);
-    if (authenticatedUser === null) {
-        reply.code(HttpStatusCode.Unauthorized);
-        reply.send();
-        return;
-    }
-    
-    const query = decodeURI(request.query.q);
-    const rankedStatus = parseInt(request.query.r);
-    const mode = parseInt(request.query.m);
-    const pageNumber = parseInt(request.query.p);
+  const authenticatedUser =
+    await authenticationService.authenticateUserFromQuery(request.query);
+  if (authenticatedUser === null) {
+    reply.code(HttpStatusCode.Unauthorized);
+    reply.send();
+    return;
+  }
 
-    const params: BeatmapSearchParameters = {
-        amount: 101,
-        offset: pageNumber,
-    };
+  const query = decodeURI(request.query.q);
+  const rankedStatus = parseInt(request.query.r);
+  const mode = parseInt(request.query.m);
+  const pageNumber = parseInt(request.query.p);
 
-    if (mode !== DEFAULT_MODE) {
-        params.mode = mode;
-    }
+  const params: BeatmapSearchParameters = {
+    amount: 101,
+    offset: pageNumber,
+  };
 
-    if (rankedStatus !== DEFAULT_RANKED_STATUS) {
-        params.status = osuApiStatusFromDirectStatus(rankedStatus);
-    }
+  if (mode !== DEFAULT_MODE) {
+    params.mode = mode;
+  }
 
-    if (!DEFAULT_QUERIES.includes(query)) {
-        params.query = query;
-    }
+  if (rankedStatus !== DEFAULT_RANKED_STATUS) {
+    params.status = osuApiStatusFromDirectStatus(rankedStatus);
+  }
 
-    const beatmapsets = await searchCheesegullBeatmapsets(params);
-    const beatmapsetCount = beatmapsets.length;
+  if (!DEFAULT_QUERIES.includes(query)) {
+    params.query = query;
+  }
 
-    const osuDirectBeatmapsets = beatmapsets.map(beatmapset => osuDirectBeatmapsetFromCheesegullBeatmapset(beatmapset));
-    const osuDirectBeatmapsetCount = beatmapsetCount >= 100 ? 101 : beatmapsetCount;
+  const beatmapsets = await searchCheesegullBeatmapsets(params);
+  const beatmapsetCount = beatmapsets.length;
 
-    return `${osuDirectBeatmapsetCount}\n${osuDirectBeatmapsets.join("\n")}`;
-}
+  const osuDirectBeatmapsets = beatmapsets.map((beatmapset) =>
+    osuDirectBeatmapsetFromCheesegullBeatmapset(beatmapset)
+  );
+  const osuDirectBeatmapsetCount =
+    beatmapsetCount >= 100 ? 101 : beatmapsetCount;
+
+  return `${osuDirectBeatmapsetCount}\n${osuDirectBeatmapsets.join("\n")}`;
+};
 
 interface OsuDirectBeatmapCardParameters extends AuthenticateParameters {
-    s?: string;
-    b?: string;
+  s?: string;
+  b?: string;
 }
 
-export const osuDirectBeatmapsetCard = async (request: FastifyRequest<{ Querystring: OsuDirectBeatmapCardParameters }>, reply: FastifyReply) => {
-    const authenticationService = request.requestContext.get('authenticationService')!;
-    const userRepository = request.requestContext.get('userRepository')!;
-    const beatmapService = request.requestContext.get('beatmapService')!;
+export const osuDirectBeatmapsetCard = async (
+  request: FastifyRequest<{ Querystring: OsuDirectBeatmapCardParameters }>,
+  reply: FastifyReply
+) => {
+  const authenticationService = request.requestContext.get(
+    "authenticationService"
+  )!;
+  const beatmapService = request.requestContext.get("beatmapService")!;
 
-    const authenticatedUser = await authenticationService.authenticateUser(request.query, userRepository);
-    if (authenticatedUser === null) {
-        reply.code(HttpStatusCode.Unauthorized);
-        reply.send();
-        return;
+  const authenticatedUser =
+    await authenticationService.authenticateUserFromQuery(request.query);
+  if (authenticatedUser === null) {
+    reply.code(HttpStatusCode.Unauthorized);
+    reply.send();
+    return;
+  }
+
+  let beatmapsetId =
+    request.query.s !== undefined ? parseInt(request.query.s) : null;
+  const beatmapId =
+    request.query.b !== undefined ? parseInt(request.query.b) : null;
+
+  if (beatmapId != null && beatmapsetId === null) {
+    const beatmapResult = await beatmapService.findByBeatmapId(beatmapId);
+
+    if (typeof beatmapResult === "string") {
+      logger.warn("Failed to find beatmap", {
+        error: beatmapResult,
+      });
+
+      reply.code(HttpStatusCode.NotFound);
+      reply.send();
+      return;
     }
 
-    let beatmapsetId = request.query.s !== undefined ? parseInt(request.query.s) : null;
-    const beatmapId = request.query.b !== undefined ? parseInt(request.query.b) : null;
+    const beatmap = beatmapResult as Beatmap;
 
-    if (beatmapId != null && beatmapsetId === null) {
-        const beatmapResult = await beatmapService.findByBeatmapId(beatmapId);
+    beatmapsetId = beatmap?.beatmapset_id ?? null;
+  }
 
-        if (typeof beatmapResult === "string") {
-            logger.warn("Failed to find beatmap", {
-                error: beatmapResult,
-            });
+  if (beatmapsetId === null) {
+    reply.code(HttpStatusCode.NotFound);
+    reply.send();
+    return;
+  }
 
-            reply.code(HttpStatusCode.NotFound);
-            reply.send();
-            return;
-        }
-    
-        const beatmap = beatmapResult as Beatmap;
-
-        beatmapsetId = beatmap?.beatmapset_id ?? null;
-    }
-
-    if (beatmapsetId === null) {
-        reply.code(HttpStatusCode.NotFound);
-        reply.send();
-        return;
-    }
-
-    const beatmapset = await getCheesegullBeatmapset(beatmapsetId);
-    return osuDirectBeatmapsetCardFromCheesegullBeatmapset(beatmapset);
-}
+  const beatmapset = await getCheesegullBeatmapset(beatmapsetId);
+  return osuDirectBeatmapsetCardFromCheesegullBeatmapset(beatmapset);
+};
 
 interface DownloadBeatmapsetParameters {
-    beatmapsetId: string;
+  beatmapsetId: string;
 }
 
-export const downloadBeatmapset = async (request: FastifyRequest<{ Params: DownloadBeatmapsetParameters }>, reply: FastifyReply) => {
-    reply.redirect(
-        `${process.env.BEATMAP_DOWNLOAD_MIRROR_BASE_URL}/d/${request.params.beatmapsetId}`,
-        HttpStatusCode.MovedPermanently,
-    );
-}
+export const downloadBeatmapset = async (
+  request: FastifyRequest<{ Params: DownloadBeatmapsetParameters }>,
+  reply: FastifyReply
+) => {
+  reply.redirect(
+    `${process.env.BEATMAP_DOWNLOAD_MIRROR_BASE_URL}/d/${request.params.beatmapsetId}`,
+    HttpStatusCode.MovedPermanently
+  );
+};

@@ -2,16 +2,69 @@
   "devDependencies": {
     "@types/bcrypt": "^5.0.2",
     "@types/node": "^20.14.12",
+    "@typescript-eslint/eslint-plugin": "^7.18.0",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-check-file": "^2.8.0",
+    "eslint-plugin-import": "^2.29.1",
+    "eslint-plugin-prettier": "^5.2.1",
+    "eslint-plugin-simple-import-sort": "^12.1.1",
     "typescript": "^5.5.4"
   },
   "scripts": {
     "build": "tsc",
-    "start": "node build/index.js"
+    "start": "node build/index.js",
+    "lint-fix": "eslint --fix src/",
+    "preinstall": "npx only-allow npm"
+  },
+  "eslintConfig": {
+    "parser": "@typescript-eslint/parser",
+    "parserOptions": {
+      "ecmaVersion": "latest",
+      "sourceType": "module",
+      "ecmaFeatures": {
+        "jsx": true
+      }
+    },
+    "settings": {
+      "react": {
+        "version": "detect"
+      }
+    },
+    "extends": [
+      "prettier",
+      "plugin:@typescript-eslint/recommended",
+      "plugin:import/recommended",
+      "plugin:prettier/recommended",
+      "plugin:import/typescript"
+    ],
+    "plugins": [
+      "check-file",
+      "simple-import-sort"
+    ],
+    "rules": {
+      "@typescript-eslint/no-explicit-any": "off",
+      "simple-import-sort/imports": "error",
+      "simple-import-sort/exports": "error",
+      "no-var": "off",
+      "check-file/no-index": [
+        "warn"
+      ],
+      "import/no-default-export": "off",
+      "import/no-duplicates": [
+        "error",
+        {
+          "prefer-inline": true
+        }
+      ]
+    }
   },
   "dependencies": {
+    "@fastify/multipart": "^8.3.0",
     "@fastify/request-context": "^5.1.0",
     "axios": "^1.7.2",
     "bcrypt": "^5.1.1",
+    "cryptian": "^0.0.7",
     "dotenv": "^16.4.5",
     "fastify": "^4.28.1",
     "kysely": "^0.27.4",
