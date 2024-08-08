@@ -362,7 +362,7 @@ export class ScoreRepository {
                         or([
                             sql<boolean>`b.${sortColumn} > s.${sortColumn}`,
                             and([
-                                sql<boolean>`b.${sortColumn} = s.${sortColumn}`,
+                                sql<boolean>`b.${eb.ref(sortColumn)} = s.${eb.ref(sortColumn)}`,
                                 sql<boolean>`b.time < s.time`,
                             ]),
                         ])
