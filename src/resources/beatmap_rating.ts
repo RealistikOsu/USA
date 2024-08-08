@@ -33,8 +33,8 @@ export class BeatmapRatingRepository {
             .executeTakeFirstOrThrow();
 
         return {
-            rating: ratingResult.rating,
-            count: ratingResult.count,
+            rating: ratingResult.rating ?? 10,
+            count: ratingResult.count ?? 0,
         };
     }
 
