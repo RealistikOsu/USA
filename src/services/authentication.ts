@@ -9,6 +9,7 @@ export interface AuthenticateRequestParameters {
     h?: string;
     us?: string;
     ha?: string;
+    p?: string;
 }
 
 export interface AuthenticateParameters {
@@ -57,6 +58,7 @@ export class AuthenticationService {
         const possibilities = [
             { username: query.u, password: query.h },
             { username: query.us, password: query.ha },
+            { username: query.u, password: query.p },
         ];
 
         const validPossibilities = possibilities.filter(
