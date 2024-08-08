@@ -45,6 +45,7 @@ interface ScoreSubmissionHeaders {
 async function getFormData(request: FastifyRequest): Promise<FormData> {
     const parts = request.parts();
 
+    // TODO: figure out how to type these better without abusing `as`
     const fields: any = {};
     const files: any = {};
 

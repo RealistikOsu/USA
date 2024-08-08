@@ -8,18 +8,41 @@ const logger: Logger = new Logger({
     name: "ScreenshotHandler",
 });
 
-async function retrieveScreenshotFileFromForm(
-    request: FastifyRequest
-): Promise<Buffer | null> {
+interface FormData {
+    fields: ScreenshotFormFields;
+    files: ScreenshotFormFiles;
+}
+
+interface ScreenshotFormFiles {
+    ss: Buffer;
+}
+
+interface ScreenshotFormFields {
+    u: string;
+    p: string;
+}
+
+async function getFormData(request: FastifyRequest): Promise<FormData> {
     const parts = request.parts();
 
+    // TODO: figure out how to type these better without abusing `as`
+    const fields: any = {};
+    const files: any = {};
+
     for await (const part of parts) {
-        if (part.fieldname === "ss" && part.type === "file") {
-            return await part.toBuffer();
+        if (part.type === "file") {
+            const fileData = await part.toBuffer();
+            files[part.fieldname as keyof ScreenshotFormFiles] = fileData;
+        } else {
+            fields[part.fieldname as keyof ScreenshotFormFields] =
+                part.value;
         }
     }
 
-    return null;
+    return {
+        fields,
+        files,
+    };
 }
 
 export const screenshotUploadHandler = async (
@@ -31,8 +54,11 @@ export const screenshotUploadHandler = async (
     )!;
     const screenshotService = request.requestContext.get("screenshotService")!;
 
-    const user = await authenticationService.authenticateUserFromQuery(
-        request.query
+    const formData = await getFormData(request);
+
+    const user = await authenticationService.authenticateUser(
+        formData.fields.u,
+        formData.fields.p,
     );
     if (user === null) {
         reply.code(HttpStatusCode.Unauthorized);
@@ -40,7 +66,7 @@ export const screenshotUploadHandler = async (
         return;
     }
 
-    const screenshotFile = await retrieveScreenshotFileFromForm(request);
+    const screenshotFile = formData.files.ss;
     if (!screenshotFile) {
         return shutUpErrorResponse();
     }
