@@ -477,7 +477,9 @@ function areModsConflicting(mods: number): boolean {
         (mods & ILLEGAL_SIZE_MOD_COMBINATIONS) ===
             ILLEGAL_SIZE_MOD_COMBINATIONS ||
         (enforcedRateMods > 0 &&
-            enforcedRateMods < ENFORCED_RATE_MOD_COMBINATIONS)
+            enforcedRateMods < ENFORCED_RATE_MOD_COMBINATIONS &&
+            enforcedRateMods !== (1 << 6)
+        )
     );
 }
 
