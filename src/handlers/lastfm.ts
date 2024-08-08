@@ -2,6 +2,11 @@ import { HttpStatusCode } from "axios";
 import { FastifyReply, FastifyRequest } from "fastify";
 
 import { AuthenticateRequestParameters } from "../services/authentication";
+import { Logger } from "../logger";
+
+const logger: Logger = new Logger({
+    name: "LastFmHandler",
+});
 
 enum LastFMFlags {
     timeWarp = 1 << 1,
@@ -127,6 +132,11 @@ export const getLastFM = async (
     const explanationString = flagsExplanation.join("\n");
 
     await lastfmFlagService.create(user.id, lastfmFlags, explanationString);
+
+    logger.info("Handled anticheat flag using LastFM", {
+        flag: request.query.b,
+        userId: user.id,
+    })
     return createShutUpResponse();
 };
 

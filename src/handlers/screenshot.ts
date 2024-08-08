@@ -83,6 +83,10 @@ export const screenshotUploadHandler = async (
         return shutUpErrorResponse();
     }
 
+    logger.info("Uploaded a new screenshon", {
+        fileName: screenshotUrl.fileName,
+    })
+
     return screenshotUrl.fileName;
 };
 

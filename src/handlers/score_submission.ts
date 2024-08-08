@@ -11,6 +11,11 @@ import { assertNotNull } from "../asserts";
 import { Beatmap } from "../database";
 import { ScoreWithRank } from "../resources/score";
 import { UpdateUserStats, UserStats } from "../services/user_stats";
+import { Logger } from "../logger";
+
+const logger: Logger = new Logger({
+    name: "ScoreSubmissionHandler",
+});
 
 interface FormData {
     fields: ScoreSubmissionFormFields;
@@ -443,6 +448,11 @@ export const submitScore = async (
 
     // TODO: handlers should probably not be aware of lower level connections (i.e database, redis)
     await notifyApiOfNewScore(score.id, redis);
+
+    logger.info("Submitted a new score", {
+        userId: authenticatedUser.id,
+        scoreId: score.id,
+    })
 
     return makeFinalChart(
         authenticatedUser.id,

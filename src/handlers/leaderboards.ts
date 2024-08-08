@@ -145,5 +145,12 @@ export const beatmapLeaderboard = async (
         }
     }
 
+    logger.info("Handler beatmap leaderboards.", {
+        userId: authenticatedUser.id,
+        beatmapId: beatmap.beatmap_id,
+        beatmapMd5: beatmap.beatmap_md5,
+        relaxType: relaxType,
+    })
+
     return responseLines.join("\n");
 };

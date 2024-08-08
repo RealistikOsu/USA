@@ -2,6 +2,11 @@ import { HttpStatusCode } from "axios";
 import { FastifyReply, FastifyRequest } from "fastify";
 
 import { AuthenticateRequestParameters } from "../services/authentication";
+import { Logger } from "../logger";
+
+const logger: Logger = new Logger({
+    name: "BeatmapRatingsHandler",
+});
 
 interface BeatmapRatingParameters extends AuthenticateRequestParameters {
     c: string;
@@ -43,6 +48,10 @@ export const getBeatmapRatings = async (
     if (request.query.v === undefined) {
         return createReadyToVoteResponse();
     } else {
+        logger.info("Cast a new rating for beatmap", {
+            userId: user.id,
+            rating: request.query.v!,
+        })
         return createVoteCastResponse(castResult.rating);
     }
 };
