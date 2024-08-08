@@ -102,7 +102,7 @@ interface UsersTable {
     osuver: string | null;
     username: string;
     username_safe: string;
-    ban_datetime: Date;
+    ban_datetime: number;
     password_md5: string;
     salt: string;
     email: string;

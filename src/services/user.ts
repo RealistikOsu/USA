@@ -48,7 +48,7 @@ export class UserService {
 
         await this.userRepository.updateUserById(userId, {
             privileges: user.privileges & ~USER_PUBLIC_PRIVILEGE,
-            ban_datetime: new Date(),
+            ban_datetime: getCurrentUnixTimestamp(),
             ban_reason: summary,
         });
 
