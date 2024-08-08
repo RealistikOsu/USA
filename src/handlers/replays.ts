@@ -1,9 +1,14 @@
 import { HttpStatusCode } from "axios";
 import { FastifyReply, FastifyRequest } from "fastify";
+import { Logger } from "../logger";
 
 interface ReplayScoreIdRequest {
     c: string;
 }
+
+const logger = new Logger({
+    name: "ReplayHandler"
+});
 
 export const getRawReplay = async (
     request: FastifyRequest<{ Querystring: ReplayScoreIdRequest }>,
@@ -16,6 +21,9 @@ export const getRawReplay = async (
     );
 
     if (typeof replayResponse === "string") {
+        logger.error("Failed to serve raw replay", {
+            error: replayResponse
+        });
         reply.code(HttpStatusCode.NotFound).send();
         return;
     }
@@ -38,6 +46,9 @@ export const getFullReplay = async (
     );
 
     if (typeof replayResponse === "string") {
+        logger.error("Failed to serve full replay", {
+            error: replayResponse
+        });
         reply.code(HttpStatusCode.NotFound).send();
         return;
     }
