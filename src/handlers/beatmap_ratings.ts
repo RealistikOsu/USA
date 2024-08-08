@@ -48,11 +48,11 @@ export const getBeatmapRatings = async (
 };
 
 function createAlreadyVotedResponse(rating: number): string {
-    return `alreadyvoted\n${rating}`;
+    return `alreadyvoted\n${rating.toFixed(2)}`;
 }
 
 function createVoteCastResponse(rating: number): string {
-    return `alreadyvoting\n${rating}`;
+    return `alreadyvoting\n${rating.toFixed(2)}`;
 }
 
 function createReadyToVoteResponse(): string {
