@@ -1,10 +1,10 @@
 import fastifyMultipart from "@fastify/multipart";
+import { HttpStatusCode } from "axios";
 import fastify from "fastify";
 
 import { registerContext } from "./context";
-import { createRoutes } from "./routes";
 import { Logger } from "./logger";
-import { HttpStatusCode } from "axios";
+import { createRoutes } from "./routes";
 
 export const createApp = async () => {
     const logger: Logger = new Logger();
@@ -15,7 +15,7 @@ export const createApp = async () => {
 
         reply.status(HttpStatusCode.InternalServerError);
         reply.send();
-    })
+    });
 
     server.register(fastifyMultipart);
 

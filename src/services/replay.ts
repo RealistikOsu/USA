@@ -3,13 +3,13 @@ import crypto from "crypto";
 import { writeOsuString } from "../adapters/binary";
 import { approximateRelaxTypeFromScoreId } from "../adapters/osu";
 import { assertNotNull } from "../asserts";
-import { Score, User, Beatmap } from "../database";
+import { Beatmap, Score, User } from "../database";
 import { ReplayRepository, ReplayWithoutHeaders } from "../resources/replay";
 import { ScoreRepository } from "../resources/score";
 import { UserRepository } from "../resources/user";
 import { ErrorOr, ServiceError } from "./_common";
-import { UserStatsService } from "./user_stats";
 import { BeatmapService } from "./beatmap";
+import { UserStatsService } from "./user_stats";
 
 export interface ReplayWithHeaders {
     rawBody: Buffer;
@@ -24,7 +24,7 @@ export class ReplayService {
         private scoreRepository: ScoreRepository,
         private userRepository: UserRepository,
         private userStatsService: UserStatsService,
-        private beatmapService: BeatmapService,
+        private beatmapService: BeatmapService
     ) {}
 
     async saveRawReplay(scoreId: number, replay: Buffer) {
@@ -109,7 +109,9 @@ export class ReplayService {
             }
         );
 
-        const beatmap = await this.beatmapService.findByBeatmapMd5(score.beatmap_md5);
+        const beatmap = await this.beatmapService.findByBeatmapMd5(
+            score.beatmap_md5
+        );
         if (typeof beatmap === "string") {
             return beatmap;
         }

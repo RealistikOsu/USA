@@ -13,10 +13,10 @@ async function main() {
     const server = await createApp();
 
     server.listen(
-        { 
+        {
             port: parseInt(process.env.SERVER_PORT),
             host: "0.0.0.0",
-         },
+        },
         (err, address) => {
             if (err) {
                 console.error(err);

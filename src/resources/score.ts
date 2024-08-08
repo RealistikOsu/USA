@@ -408,7 +408,7 @@ export class ScoreRepository {
         score: number,
         mode: OsuMode,
         mods: number,
-        relaxType: RelaxType,
+        relaxType: RelaxType
     ): Promise<boolean> {
         const table = scoresTableFromRelaxType(relaxType);
 

@@ -85,7 +85,7 @@ export const osuDirectSearch = async (
         query: query,
         userId: authenticatedUser.id,
         page: pageNumber,
-    })
+    });
 
     return `${osuDirectBeatmapsetCount}\n${osuDirectBeatmapsets.join("\n")}`;
 };
@@ -145,7 +145,7 @@ export const osuDirectBeatmapsetCard = async (
         userId: authenticatedUser.id,
         beatmapId: beatmapId,
         beatmapsetId: beatmapsetId,
-    })
+    });
 
     const beatmapset = await getCheesegullBeatmapset(beatmapsetId);
     return osuDirectBeatmapsetCardFromCheesegullBeatmapset(beatmapset);

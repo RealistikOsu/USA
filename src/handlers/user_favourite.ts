@@ -1,8 +1,8 @@
 import { HttpStatusCode } from "axios";
 import { FastifyReply, FastifyRequest } from "fastify";
 
-import { AuthenticateRequestParameters } from "../services/authentication";
 import { Logger } from "../logger";
+import { AuthenticateRequestParameters } from "../services/authentication";
 
 const logger: Logger = new Logger({
     name: "UserFavouriteHandler",
@@ -41,7 +41,7 @@ export const newUserFavourite = async (
     logger.info("Added a new map as a favourite!", {
         userId: user.id,
         beatmapsetId: request.query.a,
-    })
+    });
 
     // We dont care about the result.
     return createSuccessfulFavouriteResponse();

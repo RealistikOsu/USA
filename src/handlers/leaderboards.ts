@@ -150,7 +150,7 @@ export const beatmapLeaderboard = async (
         beatmapId: beatmap.beatmap_id,
         beatmapMd5: beatmap.beatmap_md5,
         relaxType: relaxType,
-    })
+    });
 
     return responseLines.join("\n");
 };

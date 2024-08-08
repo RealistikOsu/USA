@@ -2,6 +2,7 @@ import { FastifyInstance } from "fastify";
 
 import { getBanchoConnect } from "./handlers/bancho_connect";
 import { getBeatmapRatings } from "./handlers/beatmap_ratings";
+import { getHealth } from "./handlers/health";
 import { getLastFM } from "./handlers/lastfm";
 import { beatmapLeaderboard } from "./handlers/leaderboards";
 import {
@@ -15,7 +16,6 @@ import { screenshotUploadHandler } from "./handlers/screenshot";
 import { getSeasonalBackgrounds } from "./handlers/seasonal_backgrounds";
 import { getUserFavourites, newUserFavourite } from "./handlers/user_favourite";
 import { getUserFriends } from "./handlers/user_relationships";
-import { getHealth } from "./handlers/health";
 
 export const createRoutes = (server: FastifyInstance) => {
     server.get("/web/osu-getseasonal.php", getSeasonalBackgrounds);

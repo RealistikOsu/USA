@@ -1,8 +1,8 @@
 import { HttpStatusCode } from "axios";
 import { FastifyReply, FastifyRequest } from "fastify";
 
-import { AuthenticateRequestParameters } from "../services/authentication";
 import { Logger } from "../logger";
+import { AuthenticateRequestParameters } from "../services/authentication";
 
 const logger: Logger = new Logger({
     name: "BeatmapRatingsHandler",
@@ -36,9 +36,7 @@ export const getBeatmapRatings = async (
     const castResult = await beatmapRatingService.castRating(
         user.id,
         request.query.c,
-        request.query.v !== undefined
-            ? parseInt(request.query.v)
-            : null
+        request.query.v !== undefined ? parseInt(request.query.v) : null
     );
 
     if (castResult.ownRating !== null) {
@@ -51,7 +49,7 @@ export const getBeatmapRatings = async (
         logger.info("Cast a new rating for beatmap", {
             userId: user.id,
             rating: request.query.v!,
-        })
+        });
         return createVoteCastResponse(castResult.rating);
     }
 };

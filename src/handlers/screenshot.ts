@@ -34,8 +34,7 @@ async function getFormData(request: FastifyRequest): Promise<FormData> {
             const fileData = await part.toBuffer();
             files[part.fieldname as keyof ScreenshotFormFiles] = fileData;
         } else {
-            fields[part.fieldname as keyof ScreenshotFormFields] =
-                part.value;
+            fields[part.fieldname as keyof ScreenshotFormFields] = part.value;
         }
     }
 
@@ -58,7 +57,7 @@ export const screenshotUploadHandler = async (
 
     const user = await authenticationService.authenticateUser(
         formData.fields.u,
-        formData.fields.p,
+        formData.fields.p
     );
     if (user === null) {
         reply.code(HttpStatusCode.Unauthorized);
@@ -85,7 +84,7 @@ export const screenshotUploadHandler = async (
 
     logger.info("Uploaded a new screenshon", {
         fileName: screenshotUrl.fileName,
-    })
+    });
 
     return screenshotUrl.fileName;
 };

@@ -9,9 +9,9 @@ import { calculatePerformance } from "../adapters/performance";
 import { calculateScoreStatusForUser, ScoreStatus } from "../adapters/score";
 import { assertNotNull } from "../asserts";
 import { Beatmap } from "../database";
+import { Logger } from "../logger";
 import { ScoreWithRank } from "../resources/score";
 import { UpdateUserStats, UserStats } from "../services/user_stats";
-import { Logger } from "../logger";
 
 const logger: Logger = new Logger({
     name: "ScoreSubmissionHandler",
@@ -213,7 +213,7 @@ export const submitScore = async (
         scoreData.score,
         scoreData.mode,
         scoreData.mods,
-        relaxType,
+        relaxType
     );
     if (sameScoreExists) {
         return shutUpErrorResponse();
@@ -452,7 +452,7 @@ export const submitScore = async (
     logger.info("Submitted a new score", {
         userId: authenticatedUser.id,
         scoreId: score.id,
-    })
+    });
 
     return makeFinalChart(
         authenticatedUser.id,
@@ -489,8 +489,7 @@ function areModsConflicting(mods: number): boolean {
             ILLEGAL_SIZE_MOD_COMBINATIONS ||
         (enforcedRateMods > 0 &&
             enforcedRateMods < ENFORCED_RATE_MOD_COMBINATIONS &&
-            enforcedRateMods !== (1 << 6)
-        )
+            enforcedRateMods !== 1 << 6)
     );
 }
 

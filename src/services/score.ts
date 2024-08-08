@@ -121,7 +121,7 @@ export class ScoreService {
         score: number,
         mode: OsuMode,
         mods: number,
-        relaxType: RelaxType,
+        relaxType: RelaxType
     ): Promise<boolean> {
         return await this.scoreRepository.identicalScoreExists(
             userId,
@@ -129,7 +129,7 @@ export class ScoreService {
             score,
             mode,
             mods,
-            relaxType,
+            relaxType
         );
     }
 }
