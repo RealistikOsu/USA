@@ -98,8 +98,8 @@ export class ScoreRepository {
                 let cteQuery = database
                     .selectFrom(table)
                     .innerJoin("users", "users.id", `${table}.userid`)
-                    .innerJoin("user_clans", "user_clans.user", "userid")
-                    .innerJoin("clans", "clans.id", "user_clans.clan")
+                    .leftJoin("user_clans", "user_clans.user", "userid")
+                    .leftJoin("clans", "clans.id", "user_clans.clan")
                     .selectAll(table)
                     .select((eb) =>
                         sql<number>`row_number() OVER (PARTITION BY ${eb.ref("userid")}
@@ -163,8 +163,8 @@ export class ScoreRepository {
                 let cteQuery = database
                     .selectFrom(table)
                     .innerJoin("users", "users.id", `${table}.userid`)
-                    .innerJoin("user_clans", "user_clans.user", "userid")
-                    .innerJoin("clans", "clans.id", "user_clans.clan")
+                    .leftJoin("user_clans", "user_clans.user", "userid")
+                    .leftJoin("clans", "clans.id", "user_clans.clan")
                     .selectAll(table)
                     .select((eb) =>
                         sql<number>`row_number() OVER (PARTITION BY ${eb.ref("userid")}
@@ -251,8 +251,8 @@ export class ScoreRepository {
                 let cteQuery = database
                     .selectFrom(table)
                     .innerJoin("users", "users.id", `${table}.userid`)
-                    .innerJoin("user_clans", "user_clans.user", "userid")
-                    .innerJoin("clans", "clans.id", "user_clans.clan")
+                    .leftJoin("user_clans", "user_clans.user", "userid")
+                    .leftJoin("clans", "clans.id", "user_clans.clan")
                     .selectAll(table)
                     .select((eb) =>
                         sql<number>`row_number() OVER (PARTITION BY ${eb.ref("userid")}
