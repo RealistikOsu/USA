@@ -5,7 +5,7 @@ import { AuthenticateRequestParameters } from "../services/authentication";
 
 interface BeatmapRatingParameters extends AuthenticateRequestParameters {
     c: string;
-    rating?: string;
+    v?: string;
 }
 
 export const getBeatmapRatings = async (
@@ -31,8 +31,8 @@ export const getBeatmapRatings = async (
     const castResult = await beatmapRatingService.castRating(
         user.id,
         request.query.c,
-        request.query.rating !== undefined
-            ? parseInt(request.query.rating)
+        request.query.v !== undefined
+            ? parseInt(request.query.v)
             : null
     );
 
@@ -40,7 +40,7 @@ export const getBeatmapRatings = async (
         return createAlreadyVotedResponse(castResult.rating);
     }
 
-    if (request.query.rating === undefined) {
+    if (request.query.v === undefined) {
         return createReadyToVoteResponse();
     } else {
         return createVoteCastResponse(castResult.rating);
