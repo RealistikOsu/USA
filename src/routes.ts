@@ -43,7 +43,5 @@ export const createRoutes = (server: FastifyInstance) => {
 
     server.post("/web/osu-screenshot.php", screenshotUploadHandler);
 
-    server.post("/web/osu-submit-modular-selector.php", submitScore);
-
     server.get("/health", getHealth);
 };
