@@ -21,10 +21,10 @@ export class ReplayRepository {
     }
 
     createFromScoreId(scoreId: number, replay: ReplayWithoutHeaders) {
-        fs.writeFileSync(createReplayPath(Number(scoreId)), replay.rawBody);
+        fs.writeFileSync(createReplayPath(scoreId), replay.rawBody);
     }
 }
 
 function createReplayPath(scoreId: number): string {
-    return `${process.env.PATH_TO_REPLAYS}/${scoreId}.osr`;
+    return `${process.env.PATH_TO_REPLAYS}/replay_${scoreId}.osr`;
 }
