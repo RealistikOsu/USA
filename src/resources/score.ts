@@ -414,6 +414,7 @@ export class ScoreRepository {
 
         const existingScore = await this.database
             .selectFrom(table)
+            .selectAll()
             .where("userid", "=", userId)
             .where("beatmap_md5", "=", beatmapMd5)
             .where("score", "=", score)
