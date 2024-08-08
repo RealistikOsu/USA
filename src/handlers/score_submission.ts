@@ -530,7 +530,7 @@ function makeScoreDeltaChart(
     };
 
     if (oldScore) {
-        chartEntry("rank", newScore.rank.toString(), newScore.rank.toString());
+        chartEntry("rank", newScore.rank.toString(), oldScore.rank.toString());
         chartEntry(
             "rankedScore",
             newScore.score.toString(),
