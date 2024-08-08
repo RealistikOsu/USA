@@ -13,6 +13,14 @@ export function calculateScoreStatusForUser(
     currentScore?: number,
     currentPp?: number
 ): ScoreStatus {
+    if (failed) {
+        return ScoreStatus.FAILED;
+    }
+
+    if (exited) {
+        return ScoreStatus.QUIT;
+    }
+
     const previousScoreExists =
         currentScore !== undefined && currentPp !== undefined;
 
@@ -24,14 +32,6 @@ export function calculateScoreStatusForUser(
 
         // previous score was better
         return ScoreStatus.SUBMITTED;
-    }
-
-    if (failed) {
-        return ScoreStatus.FAILED;
-    }
-
-    if (exited) {
-        return ScoreStatus.QUIT;
     }
 
     return ScoreStatus.BEST;
