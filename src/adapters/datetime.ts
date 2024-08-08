@@ -1,3 +1,3 @@
 export function getCurrentUnixTimestamp() {
-    return new Date().valueOf() / 1000;
+    return Math.trunc(new Date().valueOf() / 1000);
 }
