@@ -33,7 +33,7 @@ export const getFullReplay = async (
 ) => {
     const replayService = request.requestContext.get("replayService")!;
 
-    const replayResponse = await replayService.serveFullReplay(
+    const replayResponse = await replayService.serveCookedReplay(
         parseInt(request.params.scoreId)
     );
 

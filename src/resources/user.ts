@@ -27,9 +27,9 @@ export class UserRepository {
 
     async updateUserById(userId: number, update: UpdateUser) {
         await this.database
-            .updateTable('users')
+            .updateTable("users")
             .set(update)
-            .where('id', '=', userId)
+            .where("id", "=", userId)
             .execute();
     }
 }

@@ -53,6 +53,10 @@ export function hasLeaderboard(beatmap: Beatmap): boolean {
     return beatmap.ranked >= RIPPLE_RANKED;
 }
 
+export function beatmapAwardsPerformance(beatmap: Beatmap): boolean {
+    return [RIPPLE_RANKED, RIPPLE_APPROVED].includes(beatmap.ranked);
+}
+
 export function osuApiStatusAsRippleStatus(status: number): RippleStatus {
     switch (status) {
         case OSU_API_RANKED:

@@ -1,11 +1,16 @@
 import cryptian from "cryptian";
 import { FastifyRequest } from "fastify";
 
-import { Beatmap } from "../database";
+import { notifyApiOfNewScore } from "../adapters/api";
+import { beatmapAwardsPerformance, hasLeaderboard } from "../adapters/beatmap";
+import { getCurrentUnixTimestamp } from "../adapters/datetime";
 import { calculateAccuracy, OsuMode, relaxTypeFromMods } from "../adapters/osu";
 import { calculatePerformance } from "../adapters/performance";
-import { calculateScoreStatusForUser } from "../adapters/score";
-import { getCurrentUnixTimestamp } from "../adapters/datetime";
+import { calculateScoreStatusForUser, ScoreStatus } from "../adapters/score";
+import { assertNotNull } from "../asserts";
+import { Beatmap } from "../database";
+import { ScoreWithRank } from "../resources/score";
+import { UpdateUserStats, UserStats } from "../services/user_stats";
 
 interface FormData {
     fields: ScoreSubmissionFormFields;
@@ -85,6 +90,8 @@ interface ScoreSubmissionData {
     clientHash: string;
 }
 
+const VERIFIED_BADGE_ID = parseInt(process.env.SERVER_VERIFIED_BADGE_ID);
+
 function decryptScoreSubmissionData(formData: FormData): ScoreSubmissionData {
     const key = `osu!-scoreburgr---------${formData.fields.osuver}`;
 
@@ -140,7 +147,20 @@ export const submitScore = async (
     )!;
     const userService = request.requestContext.get("userService")!;
     const scoreService = request.requestContext.get("scoreService")!;
-    const beatmapPlaycountRepository = request.requestContext.get("beatmapPlaycountRepository")!;
+    const beatmapPlaycountRepository = request.requestContext.get(
+        "beatmapPlaycountRepository"
+    )!;
+    const ppCapService = request.requestContext.get("ppCapService")!;
+    const userBadgeRepository = request.requestContext.get(
+        "userBadgeRepository"
+    )!;
+    const whitelistRepository = request.requestContext.get(
+        "whitelistRepository"
+    )!;
+    const userStatsService = request.requestContext.get("userStatsService")!;
+    const replayService = request.requestContext.get("replayService")!;
+    const firstPlaceService = request.requestContext.get("firstPlaceService")!;
+    const redis = request.requestContext.get("redis")!;
 
     const formData = await getFormData(request);
     const { scoreData, clientHash } = decryptScoreSubmissionData(formData);
@@ -169,18 +189,36 @@ export const submitScore = async (
         scoreData.countGekis,
         scoreData.countKatus,
         scoreData.countMisses,
-        scoreData.mode,
+        scoreData.mode
     );
-    
+
     // TODO: do all of this in a transaction
 
     await userService.updateLatestActivityToCurrentTime(authenticatedUser.id);
 
-    // TODO: check mods are ranked
-    // TODO: check user-agent
-    // TODO: check "conflicting" mods
     // TODO: lock all logic below by score checksum (requires adding checksum to scores)
     // TODO: check if score with current checksum exists (^)
+
+    if (!areModsRanked(scoreData.mods)) {
+        return shutUpErrorResponse();
+    }
+
+    if (areModsConflicting(scoreData.mods)) {
+        await userService.restrict(
+            authenticatedUser.id,
+            "Score submitted with conflicting mods.",
+            "The score was submitted with impossible mod combinations, therefore must have been tampering with the client."
+        );
+        return shutUpErrorResponse();
+    }
+
+    if (!isUserAgentValid(request.headers["user-agent"])) {
+        await userService.restrict(
+            authenticatedUser.id,
+            "Score submitted with invalid user-agent.",
+            `Received user-agent: "${request.headers["user-agent"]}", instead of "osu!". This indicates that the score submission was not made by the official osu! client.`
+        );
+    }
 
     // TODO: do passed objects
     const performanceResult = await calculatePerformance(
@@ -189,19 +227,35 @@ export const submitScore = async (
         scoreData.mods,
         scoreData.maxCombo,
         accuracy,
-        scoreData.countMisses,
+        scoreData.countMisses
     );
 
     const relaxType = relaxTypeFromMods(scoreData.mods);
-    const exited = formData.fields.x == '1';
+    const exited = formData.fields.x == "1";
     const failed = !scoreData.passed && !exited;
 
-    const previousBest = await scoreService.findBestByUserIdAndBeatmapMd5(authenticatedUser.id, beatmap.beatmap_md5, scoreData.mode, relaxType);
-    const scoreStatus = calculateScoreStatusForUser(scoreData.score, performanceResult.pp, failed, exited, previousBest?.score, previousBest?.pp);
+    const previousBest =
+        await scoreService.findBestByUserIdAndBeatmapMd5WithRankAndUsername(
+            authenticatedUser.id,
+            beatmap.beatmap_md5,
+            scoreData.mode,
+            relaxType
+        );
 
-    const timeElapsed = scoreData.passed ? parseInt(formData.fields.st) : parseInt(formData.fields.ft);
+    const scoreStatus = calculateScoreStatusForUser(
+        scoreData.score,
+        performanceResult.pp,
+        failed,
+        exited,
+        previousBest?.score,
+        previousBest?.pp
+    );
 
-    const score = await scoreService.create(
+    const timeElapsed = scoreData.passed
+        ? parseInt(formData.fields.st)
+        : parseInt(formData.fields.ft);
+
+    const createdScore = await scoreService.create(
         {
             beatmap_md5: beatmap.beatmap_md5,
             userid: authenticatedUser.id,
@@ -222,15 +276,197 @@ export const submitScore = async (
             pp: performanceResult.pp,
             playtime: timeElapsed,
         },
-        relaxType,
+        relaxType
     );
 
-    if (previousBest !== null) {
-        await scoreService.updateScoreStatusToSubmitted(previousBest.id, relaxType);
+    const scoreRank = await scoreService.findScoreRank(
+        createdScore.id,
+        authenticatedUser.id,
+        beatmap.beatmap_md5,
+        createdScore.play_mode,
+        relaxType
+    );
+
+    const score = {
+        rank: scoreRank,
+        ...createdScore,
+    };
+
+    if (scoreData.passed) {
+        await replayService.saveRawReplay(score.id, formData.files.score);
     }
 
-    await beatmapPlaycountRepository.createOrIncrement(authenticatedUser.id, beatmap.beatmap_id, scoreData.mode);
+    if (previousBest !== null) {
+        await scoreService.updateScoreStatusToSubmitted(
+            previousBest.id,
+            relaxType
+        );
+    }
+
+    await beatmapPlaycountRepository.createOrIncrement(
+        authenticatedUser.id,
+        beatmap.beatmap_id,
+        scoreData.mode
+    );
+
+    const oldStats = await userStatsService.findByUserIdAndMode(
+        authenticatedUser.id,
+        score.play_mode,
+        relaxType
+    );
+    assertNotNull(oldStats);
+
+    if (scoreData.passed && beatmapAwardsPerformance(beatmap)) {
+        const verified = await userBadgeRepository.hasBadge(
+            authenticatedUser.id,
+            VERIFIED_BADGE_ID
+        );
+        const whitelisted = await whitelistRepository.hasWhitelist(
+            authenticatedUser.id
+        );
+        const exceedsPpCap = await ppCapService.ppExceedsPpCap(
+            score.pp,
+            score.play_mode,
+            relaxType,
+            score.mods
+        );
+
+        if (exceedsPpCap && !verified && !whitelisted) {
+            await userService.restrict(authenticatedUser.id, "todo", "todo");
+        }
+    }
+
+    // TODO: probably move all of this stat update stuff into ScoreService? UserStatsService? IDK which is more appropriate
+
+    let totalHits = score["300_count"] + score["100_count"];
+
+    if (score.play_mode != 2) {
+        // include 50s for non-catch
+        totalHits += score["50_count"];
+    }
+
+    if (score.play_mode === 1 || score.play_mode === 3) {
+        // include gekis/katus for taiko & mania
+        totalHits += score.gekis_count + score.katus_count;
+    }
+
+    const statsToUpdate: UpdateUserStats = {
+        playcount: oldStats.playcount + 1,
+        playtime: oldStats.playtime + timeElapsed / 1000,
+        total_score: oldStats.total_score + score.score,
+        total_hits: oldStats.total_hits + totalHits,
+    };
+
+    if (scoreData.passed && hasLeaderboard(beatmap)) {
+        if (score.max_combo > oldStats.max_combo) {
+            statsToUpdate.max_combo = score.max_combo;
+        }
+
+        const scoresToConsider = await scoreService.findTop1000ScoresByUserId(
+            authenticatedUser.id,
+            score.play_mode,
+            relaxType
+        );
+
+        const top100Scores = scoresToConsider.slice(0, 100);
+
+        let totalPp = 0;
+        let totalAcc = 0;
+        let lastIndex = 0;
+
+        for (let index = 0; index < top100Scores.length; index++) {
+            const score = top100Scores[index];
+
+            totalPp += score.pp * Math.pow(0.95, index);
+            totalAcc += score.accuracy * Math.pow(0.95, index);
+
+            lastIndex = index;
+        }
+
+        statsToUpdate.avg_accuracy =
+            (totalAcc * (100.0 / (20 * (1 - Math.pow(0.95, lastIndex + 1))))) /
+            100;
+        statsToUpdate.pp =
+            totalPp + 416.6667 * (1 - Math.pow(0.995, scoresToConsider.length));
+
+        // TODO: apparently this is supposed to apply to loved too? (osu! does)
+        if (
+            score.completed === ScoreStatus.BEST &&
+            beatmapAwardsPerformance(beatmap)
+        ) {
+            let rankedScore = score.score;
+            if (previousBest !== null) {
+                rankedScore -= previousBest.score;
+            }
+
+            statsToUpdate.ranked_score = oldStats.ranked_score + rankedScore;
+        }
+    }
+
+    const newStats = await userStatsService.updateByUserIdAndMode(
+        authenticatedUser.id,
+        score.play_mode,
+        relaxType,
+        statsToUpdate
+    );
+
+    const userRestricted = await userService.userIsRestricted(
+        authenticatedUser.id
+    );
+    if (
+        score.rank === 1 &&
+        score.completed === ScoreStatus.BEST &&
+        hasLeaderboard(beatmap) &&
+        !userRestricted
+    ) {
+        await firstPlaceService.setNewFirstPlace(
+            score,
+            authenticatedUser,
+            beatmap,
+            relaxType
+        );
+    }
+
+    // TODO: handlers should probably not be aware of lower level connections (i.e database, redis)
+    await notifyApiOfNewScore(score.id, redis);
+
+    return makeFinalChart(
+        authenticatedUser.id,
+        beatmap,
+        score,
+        newStats,
+        oldStats,
+        previousBest
+    ).join("|");
 };
+
+// Scorev2, autoplay and target practice.
+const UNRANKED_MODS = (1 << 29) | (1 << 11) | (1 << 23);
+
+function areModsRanked(mods: number): boolean {
+    return (mods & UNRANKED_MODS) === 0;
+}
+
+// DTHT
+const ILLEGAL_RATE_MOD_COMBINATIONS = (1 << 6) | (1 << 8);
+
+// EZHR
+const ILLEGAL_SIZE_MOD_COMBINATIONS = (1 << 4) | (1 << 1);
+
+// DTNC
+const ENFORCED_RATE_MOD_COMBINATIONS = (1 << 6) | (1 << 9);
+
+function areModsConflicting(mods: number): boolean {
+    const enforcedRateMods = mods & ENFORCED_RATE_MOD_COMBINATIONS;
+    return (
+        (mods & ILLEGAL_RATE_MOD_COMBINATIONS) ===
+            ILLEGAL_RATE_MOD_COMBINATIONS ||
+        (mods & ILLEGAL_SIZE_MOD_COMBINATIONS) ===
+            ILLEGAL_SIZE_MOD_COMBINATIONS ||
+        (enforcedRateMods > 0 &&
+            enforcedRateMods < ENFORCED_RATE_MOD_COMBINATIONS)
+    );
+}
 
 function beatmapErrorResponse() {
     return "error: beatmap";
@@ -238,4 +474,150 @@ function beatmapErrorResponse() {
 
 function emptyErrorResponse() {
     return "";
+}
+
+function shutUpErrorResponse() {
+    return "error: no";
+}
+
+function isUserAgentValid(userAgent: string): boolean {
+    return userAgent === "osu!";
+}
+
+type ChartDeltaName =
+    | "rank"
+    | "rankedScore"
+    | "totalScore"
+    | "maxCombo"
+    | "accuracy"
+    | "pp";
+
+function chartDeltaRow(
+    name: ChartDeltaName,
+    newValue: string,
+    oldValue: string | null = null
+): string {
+    return `${name}Before:${oldValue || ""}|${name}After:${newValue}`;
+}
+
+function makeScoreDeltaChart(
+    newScore: ScoreWithRank,
+    oldScore: ScoreWithRank | null
+): string[] {
+    const chart: string[] = [];
+
+    const chartEntry = (
+        name: ChartDeltaName,
+        newValue: string,
+        oldValue: string | null = null
+    ) => {
+        chart.push(chartDeltaRow(name, newValue, oldValue));
+    };
+
+    if (oldScore) {
+        chartEntry("rank", newScore.rank.toString(), newScore.rank.toString());
+        chartEntry(
+            "rankedScore",
+            newScore.score.toString(),
+            oldScore.score.toString()
+        );
+        chartEntry(
+            "totalScore",
+            newScore.score.toString(),
+            oldScore.score.toString()
+        );
+        chartEntry(
+            "maxCombo",
+            newScore.max_combo.toString(),
+            oldScore.max_combo.toString()
+        );
+        chartEntry(
+            "accuracy",
+            newScore.accuracy.toFixed(2),
+            oldScore.accuracy.toFixed(2)
+        );
+        chartEntry("pp", newScore.pp.toFixed(2), oldScore.pp.toFixed(2));
+    } else {
+        chartEntry("rank", newScore.rank.toString());
+        chartEntry("rankedScore", newScore.score.toString());
+        chartEntry("totalScore", newScore.score.toString());
+        chartEntry("maxCombo", newScore.max_combo.toString());
+        chartEntry("accuracy", newScore.accuracy.toFixed(2));
+        chartEntry("pp", newScore.pp.toFixed(2));
+    }
+
+    return chart;
+}
+
+function makeStatsDeltaChart(
+    newStats: UserStats,
+    oldStats: UserStats
+): string[] {
+    const chart: string[] = [];
+
+    const chartEntry = (
+        name: ChartDeltaName,
+        newValue: string,
+        oldValue: string | null = null
+    ) => {
+        chart.push(chartDeltaRow(name, newValue, oldValue));
+    };
+
+    chartEntry("rank", newStats.rank.toString(), oldStats.rank.toString());
+
+    chartEntry(
+        "rankedScore",
+        newStats.ranked_score.toString(),
+        oldStats.ranked_score.toString()
+    );
+    chartEntry(
+        "totalScore",
+        newStats.total_score.toString(),
+        oldStats.total_score.toString()
+    );
+    chartEntry(
+        "maxCombo",
+        newStats.max_combo.toString(),
+        oldStats.max_combo.toString()
+    );
+    chartEntry(
+        "accuracy",
+        newStats.avg_accuracy.toFixed(2),
+        oldStats.avg_accuracy.toFixed(2)
+    );
+    chartEntry("pp", newStats.pp.toFixed(2), oldStats.pp.toFixed(2));
+
+    return chart;
+}
+
+function makeFinalChart(
+    userId: number,
+    beatmap: Beatmap,
+    newScore: ScoreWithRank,
+    newStats: UserStats,
+    oldStats: UserStats,
+    oldScore: ScoreWithRank | null
+): string[] {
+    const beatmapRankingChart = makeScoreDeltaChart(newScore, oldScore);
+    const overallRankingChart = makeStatsDeltaChart(newStats, oldStats);
+
+    return [
+        `beatmapId:${beatmap.beatmap_id}`,
+        `beatmapSetId:${beatmap.beatmapset_id}`,
+        `beatmapPlaycount:${beatmap.playcount}`,
+        `beatmapPasscount:${beatmap.passcount}`,
+        `approvedDate:${new Date(beatmap.latest_update * 1000).toISOString()}`,
+        "\n",
+        "chartId:beatmap",
+        `chartUrl:${process.env.SERVER_BASE_URL}/beatmaps/${beatmap.beatmap_id}`,
+        "chartName:Beatmap Ranking",
+        ...beatmapRankingChart,
+        `onlineScoreId:${newScore.id}`,
+        "\n",
+        "chartId:overall",
+        `chartUrl:${process.env.SERVER_BASE_URL}/users/${userId}`,
+        "chartName:Overall Ranking",
+        ...overallRankingChart,
+        "achievements-new:", // TODO: achievements
+    ];
 }

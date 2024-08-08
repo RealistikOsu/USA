@@ -145,6 +145,7 @@ export const getBeatmapComments = async (
         return postBeatmapCommentResponse(request, user);
     }
 
-    console.log(`Unreachable action: ${action}`);
-    return;
+    logger.error("Unreachable action", {
+        action,
+    });
 };

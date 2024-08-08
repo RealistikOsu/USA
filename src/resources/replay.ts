@@ -20,10 +20,7 @@ export class ReplayRepository {
         return { rawBody };
     }
 
-    async createFromScoreId(
-        scoreId: number,
-        replay: ReplayWithoutHeaders
-    ): Promise<void> {
+    createFromScoreId(scoreId: number, replay: ReplayWithoutHeaders) {
         fs.writeFileSync(createReplayPath(Number(scoreId)), replay.rawBody);
     }
 }

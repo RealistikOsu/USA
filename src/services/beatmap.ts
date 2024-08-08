@@ -22,7 +22,7 @@ const logger: Logger = new Logger({
 const FIVE_MINUTES = 5 * 60 * 1000;
 const TEN_MINUTES = 10 * 60 * 1000;
 const ONE_DAY = 24 * 60 * 60 * 1000;
-const NEVER = 9e15;
+const NEVER = 9e16;
 
 export interface ExtraBeatmapData {
     beatmapSetId: number;
@@ -52,7 +52,7 @@ export class BeatmapService {
 
         if (
             banchoBeatmapset.error === OSU_MAP_NOT_FOUND_RESPONSE ||
-            banchoBeatmaps.length == 0
+            banchoBeatmaps.length === 0
         ) {
             logger.debug(
                 "Beatmap set has been unsubmitted. Deleting all child difficulties",

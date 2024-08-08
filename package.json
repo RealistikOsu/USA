@@ -2,6 +2,7 @@
     "devDependencies": {
         "@types/bcrypt": "^5.0.2",
         "@types/node": "^20.14.12",
+        "@types/redis": "^4.0.11",
         "@typescript-eslint/eslint-plugin": "^7.18.0",
         "eslint": "^8.57.0",
         "eslint-config-prettier": "^9.1.0",
@@ -62,14 +63,18 @@
     "dependencies": {
         "@fastify/multipart": "^8.3.0",
         "@fastify/request-context": "^5.1.0",
+        "@types/ioredis": "^5.0.0",
+        "@vermaysha/discord-webhook": "^1.4.0",
         "axios": "^1.7.2",
         "bcrypt": "^5.1.1",
         "cryptian": "^0.0.7",
         "dotenv": "^16.4.5",
         "fastify": "^4.28.1",
+        "ioredis": "^5.4.1",
         "kysely": "^0.27.4",
         "mysql2": "^3.10.3",
         "osu-api-extended": "^2.8.51",
+        "redis": "^4.7.0",
         "tslog": "^4.9.3"
     }
 }

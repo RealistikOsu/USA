@@ -1,11 +1,6 @@
-import { Kysely, sql } from "kysely";
+import { Kysely } from "kysely";
 
-import {
-    modeSuffixFromMode,
-    OsuMode,
-    OsuModeString,
-    userStatsTableFromRelaxType,
-} from "../adapters/osu";
+import { RelaxType, userStatsTableFromRelaxType } from "../adapters/osu";
 import { Database, UpdateUserStats, UserStats } from "../database";
 
 export class UserStatsRepository {
@@ -28,10 +23,10 @@ export class UserStatsRepository {
 
     async updateByUserId(
         userId: number,
-        relaxMode: number,
+        relaxType: RelaxType,
         userStats: UpdateUserStats
     ): Promise<void> {
-        const relaxTable = userStatsTableFromRelaxType(relaxMode);
+        const relaxTable = userStatsTableFromRelaxType(relaxType);
 
         await this.database
             .updateTable(relaxTable)
@@ -39,16 +34,4 @@ export class UserStatsRepository {
             .where("id", "=", userId)
             .execute();
     }
-
-    async incrementReplayViews(userId: number, mode: OsuMode): Promise<void> {
-        const replayColumn: ReplaysWatchedColumn = `replays_watched_${modeSuffixFromMode(mode)}`;
-
-        await this.database
-            .updateTable("users_stats")
-            .set((eb) => ({ [replayColumn]: sql`${eb.ref(replayColumn)} + 1` }))
-            .where("id", "=", userId)
-            .execute();
-    }
 }
-
-type ReplaysWatchedColumn = `replays_watched_${OsuModeString}`;

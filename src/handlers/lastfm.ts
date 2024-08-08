@@ -111,7 +111,7 @@ export const getLastFM = async (
     const user = await authenticationService.authenticateUserFromQuery(
         request.query
     );
-    if (user == null) {
+    if (user === null) {
         reply.code(HttpStatusCode.Unauthorized);
         reply.send();
         return;

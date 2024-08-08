@@ -1,7 +1,17 @@
-import { approximateRelaxTypeFromScoreId, OsuMode, RelaxType } from "../adapters/osu";
+import {
+    approximateRelaxTypeFromScoreId,
+    OsuMode,
+    RelaxType,
+    sortColumnFromRelaxType,
+} from "../adapters/osu";
 import { ScoreStatus } from "../adapters/score";
+import { assertNotNull } from "../asserts";
 import { NewScore, Score } from "../database";
-import { ScoreRepository } from "../resources/score";
+import {
+    ScoreRepository,
+    ScoreWithRankAndUsername,
+    TopScore,
+} from "../resources/score";
 
 export class ScoreService {
     constructor(private scoreRepository: ScoreRepository) {}
@@ -22,13 +32,26 @@ export class ScoreService {
         return score.userid === userId;
     }
 
-    async findBestByUserIdAndBeatmapMd5(userId: number, beatmapMd5: string, mode: OsuMode, relaxType: RelaxType): Promise<Score | null> {
-        const score = await this.scoreRepository.findBestByUserIdAndBeatmapMd5(userId, beatmapMd5, mode, relaxType);
+    async findBestByUserIdAndBeatmapMd5(
+        userId: number,
+        beatmapMd5: string,
+        mode: OsuMode,
+        relaxType: RelaxType
+    ): Promise<Score | null> {
+        const score = await this.scoreRepository.findBestByUserIdAndBeatmapMd5(
+            userId,
+            beatmapMd5,
+            mode,
+            relaxType
+        );
         return score;
     }
 
     async create(score: NewScore, relaxType: RelaxType): Promise<Score> {
-        const createdScore = await this.scoreRepository.create(score, relaxType);
+        const createdScore = await this.scoreRepository.create(
+            score,
+            relaxType
+        );
         return createdScore;
     }
 
@@ -36,7 +59,59 @@ export class ScoreService {
         await this.scoreRepository.update(
             scoreId,
             { completed: ScoreStatus.SUBMITTED },
-            relaxType,
+            relaxType
         );
+    }
+
+    async findBestByUserIdAndBeatmapMd5WithRankAndUsername(
+        userId: number,
+        beatmapMd5: string,
+        mode: OsuMode,
+        relaxType: RelaxType
+    ): Promise<ScoreWithRankAndUsername | null> {
+        const score =
+            await this.scoreRepository.findByUserIdWithRankAndUsername({
+                userId,
+                beatmapMd5,
+                playMode: mode,
+                relaxType,
+                bestScoresOnly: true,
+                sortColumn: sortColumnFromRelaxType(relaxType),
+            });
+
+        return score;
+    }
+
+    async findScoreRank(
+        scoreId: number,
+        userId: number,
+        beatmapMd5: string,
+        mode: OsuMode,
+        relaxType: RelaxType
+    ): Promise<number> {
+        const score = await this.scoreRepository.findByScoreIdWithRank(
+            scoreId,
+            userId,
+            beatmapMd5,
+            mode,
+            relaxType,
+            sortColumnFromRelaxType(relaxType)
+        );
+        assertNotNull(score);
+
+        return score.rank;
+    }
+
+    async findTop1000ScoresByUserId(
+        userId: number,
+        mode: OsuMode,
+        relaxType: RelaxType
+    ): Promise<TopScore[]> {
+        const scores = await this.scoreRepository.findTop1000ScoresByUserId(
+            userId,
+            mode,
+            relaxType
+        );
+        return scores;
     }
 }

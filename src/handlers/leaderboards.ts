@@ -107,7 +107,7 @@ export const beatmapLeaderboard = async (
             params.modsFilter = mods;
         }
 
-        if (leaderboardType == 3) {
+        if (leaderboardType === 3) {
             const userRelationships =
                 await userRelationshipRepository.fetchManyByUserId(
                     authenticatedUser.id
@@ -118,7 +118,7 @@ export const beatmapLeaderboard = async (
                 .concat([authenticatedUser.id]);
         }
 
-        if (leaderboardType == 4) {
+        if (leaderboardType === 4) {
             params.countryFilter = authenticatedUser.country;
         }
 

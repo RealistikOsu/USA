@@ -11,6 +11,7 @@ import {
 } from "./handlers/osu_direct";
 import { getFullReplay, getRawReplay } from "./handlers/replays";
 import { submitScore } from "./handlers/score_submission";
+import { screenshotUploadHandler } from "./handlers/screenshot";
 import { getSeasonalBackgrounds } from "./handlers/seasonal_backgrounds";
 import { getUserFavourites, newUserFavourite } from "./handlers/user_favourite";
 import { getUserFriends } from "./handlers/user_relationships";
@@ -38,4 +39,6 @@ export const createRoutes = (server: FastifyInstance) => {
 
     server.get("/web/osu-addfavourite.php", newUserFavourite);
     server.get("/web/osu-getfavourites.php", getUserFavourites);
+
+    server.post("/web/osu-screenshot.php", screenshotUploadHandler);
 };

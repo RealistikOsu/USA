@@ -11,12 +11,13 @@ export function calculateScoreStatusForUser(
     failed: boolean,
     exited: boolean,
     currentScore?: number,
-    currentPp?: number,
+    currentPp?: number
 ): ScoreStatus {
-    const previousScoreExists = currentScore !== undefined && currentPp !== undefined;
+    const previousScoreExists =
+        currentScore !== undefined && currentPp !== undefined;
 
     if (previousScoreExists) {
-        if (pp > currentPp || pp == currentPp && score > currentScore) {
+        if (pp > currentPp || (pp === currentPp && score > currentScore)) {
             // highest pp, or spin to win
             return ScoreStatus.BEST;
         }
@@ -24,11 +25,11 @@ export function calculateScoreStatusForUser(
         // previous score was better
         return ScoreStatus.SUBMITTED;
     }
-    
+
     if (failed) {
         return ScoreStatus.FAILED;
     }
-    
+
     if (exited) {
         return ScoreStatus.QUIT;
     }

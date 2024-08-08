@@ -1,6 +1,6 @@
 import { Generated, Insertable, Selectable, Updateable } from "kysely";
 
-import { OsuMode } from "./adapters/osu";
+import { OsuMode, RelaxType } from "./adapters/osu";
 import { ScoreStatus } from "./adapters/score";
 
 export interface Database {
@@ -16,6 +16,7 @@ export interface Database {
     users_relationships: UserRelationshipTable;
     users_beatmap_playcount: UserBeatmapPlaycountTable;
     users_stats: UsersStatsTable;
+
     // Technically these two differ a tad bit from users_stats.
     rx_stats: UsersStatsTable;
     ap_stats: UsersStatsTable;
@@ -23,6 +24,11 @@ export interface Database {
     lastfm_flags: LastfmFlagsTable;
     user_favourites: UserFavouritesTable;
     comments: BeatmapCommentsTable;
+    pp_limits: PpLimitsTable;
+    user_badges: UserBadgesTable;
+    whitelist: WhitelistTable;
+    ban_logs: BanLogsTable;
+    first_places: FirstPlacesTable;
 }
 
 interface SeasonalBackgroundTable {
@@ -244,6 +250,56 @@ interface BeatmapCommentsTable {
     special_format: string;
 }
 
+interface PpLimitsTable {
+    mode: OsuMode;
+    relax: RelaxType;
+    pp: number;
+    flashlight_pp: number;
+}
+
+interface UserBadgesTable {
+    id: Generated<number>;
+    user: number;
+    badge: number;
+}
+
+interface WhitelistTable {
+    user_id: number;
+}
+
+interface BanLogsTable {
+    id: Generated<number>;
+    from_id: number;
+    to_id: number;
+    ts: Generated<Date>;
+    summary: string;
+    detail: string;
+}
+
+interface FirstPlacesTable {
+    id: Generated<number>;
+    score_id: number;
+    user_id: number;
+    score: number;
+    max_combo: number;
+    full_combo: boolean;
+    mods: number;
+    "300_count": number;
+    "100_count": number;
+    "50_count": number;
+    ckatus_count: number;
+    cgekis_count: number;
+    miss_count: number;
+    timestamp: number;
+    mode: OsuMode;
+    completed: ScoreStatus;
+    accuracy: number;
+    pp: number;
+    play_time: number;
+    beatmap_md5: string;
+    relax: RelaxType;
+}
+
 export type NewBeatmap = Insertable<BeatmapsTable>;
 export type NewScore = Insertable<ScoresTable>;
 export type NewRating = Insertable<BeatmapRatingTable>;
@@ -252,6 +308,8 @@ export type NewUserBeatmapPlaycount = Insertable<UserBeatmapPlaycountTable>;
 export type NewLastfmFlag = Insertable<LastfmFlagsTable>;
 export type NewUserFavorite = Insertable<UserFavouritesTable>;
 export type NewBeatmapComment = Insertable<BeatmapCommentsTable>;
+export type NewBanLog = Insertable<BanLogsTable>;
+export type NewFirstPlace = Insertable<FirstPlacesTable>;
 
 export type SeasonalBackground = Selectable<SeasonalBackgroundTable>;
 export type Beatmap = Selectable<BeatmapsTable>;
@@ -265,6 +323,11 @@ export type UserBeatmapPlaycount = Selectable<UserBeatmapPlaycountTable>;
 export type UserStats = Selectable<UsersStatsTable>;
 export type UserFavourite = Selectable<UserFavouritesTable>;
 export type BeatmapComment = Selectable<BeatmapCommentsTable>;
+export type PpLimit = Selectable<PpLimitsTable>;
+export type UserBadge = Selectable<UserBadgesTable>;
+export type Whitelist = Selectable<WhitelistTable>;
+export type BanLog = Selectable<BanLogsTable>;
+export type FirstPlace = Selectable<FirstPlacesTable>;
 
 export type UpdateBeatmap = Updateable<BeatmapsTable>;
 export type UpdateUserBeatmapPlaycount = Updateable<UserBeatmapPlaycountTable>;

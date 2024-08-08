@@ -8,6 +8,9 @@ declare namespace NodeJS {
         readonly DATABASE_PASSWORD: string;
         readonly DATABASE_NAME: string;
 
+        readonly REDIS_HOST: string;
+        readonly REDIS_PORT: string;
+
         readonly OSU_API_V2_CLIENT_ID: string;
         readonly OSU_API_V2_CLIENT_SECRET: string;
 
@@ -19,5 +22,10 @@ declare namespace NodeJS {
         readonly PATH_TO_SCREENSHOTS: string;
 
         readonly LOGGER_MIN_LEVEL: string;
+
+        readonly SERVER_BASE_URL: string;
+        readonly SERVER_VERIFIED_BADGE_ID: string;
+
+        readonly ADMIN_WEBHOOK_URL: string | undefined;
     }
 }

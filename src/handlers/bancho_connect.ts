@@ -20,5 +20,5 @@ export const getBanchoConnect = async (
 };
 
 function createUnauthorisedResponse(): string {
-    return "error: pass\n";
+    return "error: pass";
 }

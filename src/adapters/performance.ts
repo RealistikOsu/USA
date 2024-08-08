@@ -43,7 +43,7 @@ export async function calculatePerformance(
     max_combo: number,
     accuracy: number,
     miss_count: number,
-    passed_objects?: number,
+    passed_objects?: number
 ): Promise<PerformanceResult> {
     const request: PerformanceRequest = {
         beatmap_id,

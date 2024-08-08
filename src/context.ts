@@ -1,31 +1,42 @@
 import fastifyRequestContext from "@fastify/request-context";
 import { FastifyInstance } from "fastify";
+import { Redis } from "ioredis";
 import { Kysely, MysqlDialect } from "kysely";
 import mysql from "mysql2";
 import { auth } from "osu-api-extended";
 
 import { Database } from "./database";
+import { BanLogRepository } from "./resources/ban_log";
 import { BeatmapRepository } from "./resources/beatmap";
+import { BeatmapPlaycountRepository } from "./resources/beatmap_playcount";
 import { BeatmapRatingRepository } from "./resources/beatmap_rating";
+import { FirstPlaceRepository } from "./resources/first_place";
 import { LastfmFlagRepository } from "./resources/lastfm_flag";
+import { PpLimitRepository } from "./resources/pp_limit";
 import { ReplayRepository } from "./resources/replay";
 import { ScoreRepository } from "./resources/score";
+import { ScreenshotRepository } from "./resources/screenshots";
 import { SeasonalBackgroundRepository } from "./resources/seasonal_background";
 import { UserRepository } from "./resources/user";
+import { UserBadgeRepository } from "./resources/user_badge";
 import { UserFavouriteRepository } from "./resources/user_favourite";
 import { UserRelationshipRepository } from "./resources/user_relationship";
 import { UserStatsRepository } from "./resources/user_stats";
+import { WhitelistRepository } from "./resources/whitelist";
 import { AuthenticationService } from "./services/authentication";
 import { BeatmapService } from "./services/beatmap";
 import { BeatmapRatingService } from "./services/beatmap_rating";
+import { FirstPlaceService } from "./services/first_place";
 import { LastfmFlagService } from "./services/lastfm_flag";
 import { LeaderboardService } from "./services/leaderboard";
+import { PpCapService } from "./services/pp_cap";
 import { ReplayService } from "./services/replay";
 import { ScoreService } from "./services/score";
+import { ScreenshotService } from "./services/screenshot";
+import { UserService } from "./services/user";
 import { UserFavouriteService } from "./services/user_favourite";
 import { UserRelationshipService } from "./services/user_relationship";
-import { UserService } from "./services/user";
-import { BeatmapPlaycountRepository } from "./resources/beatmap_playcount";
+import { UserStatsService } from "./services/user_stats";
 
 declare module "@fastify/request-context" {
     interface RequestContextData {
@@ -33,6 +44,8 @@ declare module "@fastify/request-context" {
         _beatmapRepository: BeatmapRepository;
         _beatmapRatingRepository: BeatmapRatingRepository;
         _scoreRepository: ScoreRepository;
+        _ppLimitRepository: PpLimitRepository;
+        _firstPlaceRepository: FirstPlaceRepository;
         seasonalBackgroundRepository: SeasonalBackgroundRepository;
         beatmapService: BeatmapService;
         userRepository: UserRepository;
@@ -50,6 +63,15 @@ declare module "@fastify/request-context" {
         scoreService: ScoreService;
         userService: UserService;
         beatmapPlaycountRepository: BeatmapPlaycountRepository;
+        ppCapService: PpCapService;
+        userBadgeRepository: UserBadgeRepository;
+        whitelistRepository: WhitelistRepository;
+        userStatsService: UserStatsService;
+        redis: Redis;
+        banLogRepository: BanLogRepository;
+        screenshotRepository: ScreenshotRepository;
+        screenshotService: ScreenshotService;
+        firstPlaceService: FirstPlaceService;
     }
 }
 
@@ -75,9 +97,14 @@ async function authenticateOsuApi() {
     );
 }
 
+function createRedis(): Redis {
+    return new Redis(parseInt(process.env.REDIS_PORT), process.env.REDIS_HOST);
+}
+
 export const registerContext = async (server: FastifyInstance) => {
     server.register(fastifyRequestContext);
     const database = await createDatabase();
+    const redis = createRedis();
 
     await authenticateOsuApi();
 
@@ -89,8 +116,14 @@ export const registerContext = async (server: FastifyInstance) => {
         const beatmapRepository = new BeatmapRepository(database);
         const beatmapService = new BeatmapService(beatmapRepository);
 
+        const banLogRepository = new BanLogRepository(database);
+
         const userRepository = new UserRepository(database);
-        const userService = new UserService(userRepository);
+        const userService = new UserService(
+            userRepository,
+            banLogRepository,
+            redis
+        );
         const authenticationService = new AuthenticationService(userRepository);
 
         const beatmapRatingRepository = new BeatmapRatingRepository(database);
@@ -112,13 +145,18 @@ export const registerContext = async (server: FastifyInstance) => {
         const leaderboardService = new LeaderboardService(scoreRepository);
 
         const userStatsRepository = new UserStatsRepository(database);
+        const userStatsService = new UserStatsService(
+            userStatsRepository,
+            userService,
+            redis
+        );
 
         const replayRepository = new ReplayRepository();
         const replayService = new ReplayService(
             replayRepository,
             scoreRepository,
             userRepository,
-            userStatsRepository
+            userStatsService
         );
 
         const lastfmFlagRepository = new LastfmFlagRepository(database);
@@ -129,7 +167,25 @@ export const registerContext = async (server: FastifyInstance) => {
             userFavouriteRepository
         );
 
-        const beatmapPlaycountRepository = new BeatmapPlaycountRepository(database);
+        const beatmapPlaycountRepository = new BeatmapPlaycountRepository(
+            database
+        );
+
+        const ppLimitRepository = new PpLimitRepository(database);
+        const ppCapService = new PpCapService(ppLimitRepository);
+
+        const userBadgeRepository = new UserBadgeRepository(database);
+
+        const whitelistRepository = new WhitelistRepository(database);
+
+        const firstPlaceRepository = new FirstPlaceRepository(database);
+        const firstPlaceService = new FirstPlaceService(
+            firstPlaceRepository,
+            redis
+        );
+
+        const screenshotRepository = new ScreenshotRepository(redis);
+        const screenshotService = new ScreenshotService(screenshotRepository);
 
         request.requestContext.set("_database", database);
         request.requestContext.set("_beatmapRepository", beatmapRepository);
@@ -175,6 +231,26 @@ export const registerContext = async (server: FastifyInstance) => {
         );
         request.requestContext.set("scoreService", scoreService);
         request.requestContext.set("userService", userService);
-        request.requestContext.set("beatmapPlaycountRepository", beatmapPlaycountRepository);
+        request.requestContext.set(
+            "beatmapPlaycountRepository",
+            beatmapPlaycountRepository
+        );
+        request.requestContext.set("_ppLimitRepository", ppLimitRepository);
+        request.requestContext.set("ppCapService", ppCapService);
+        request.requestContext.set("userBadgeRepository", userBadgeRepository);
+        request.requestContext.set("whitelistRepository", whitelistRepository);
+        request.requestContext.set("userStatsService", userStatsService);
+        request.requestContext.set("redis", redis);
+        request.requestContext.set("banLogRepository", banLogRepository);
+        request.requestContext.set(
+            "_firstPlaceRepository",
+            firstPlaceRepository
+        );
+        request.requestContext.set(
+            "screenshotRepository",
+            screenshotRepository
+        );
+        request.requestContext.set("screenshotService", screenshotService);
+        request.requestContext.set("firstPlaceService", firstPlaceService);
     });
 };

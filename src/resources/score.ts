@@ -3,8 +3,11 @@ import { Kysely, sql } from "kysely";
 import { OsuMode, RelaxType, scoresTableFromRelaxType } from "../adapters/osu";
 import { Database, NewScore, Score, UpdateScore } from "../database";
 
-export interface ScoreWithRankAndUsername extends Score {
+export interface ScoreWithRank extends Score {
     rank: number;
+}
+
+export interface ScoreWithRankAndUsername extends ScoreWithRank {
     username: string;
 }
 
@@ -29,6 +32,11 @@ export interface FindByUserIdParameters {
     modsFilter?: number;
     bestScoresOnly: boolean;
     sortColumn: "pp" | "score";
+}
+
+export interface TopScore {
+    accuracy: number;
+    pp: number;
 }
 
 export class ScoreRepository {
@@ -56,20 +64,25 @@ export class ScoreRepository {
         await this.database
             .updateTable(table)
             .set(score)
-            .where('id', '=', scoreId)
+            .where("id", "=", scoreId)
             .execute();
     }
 
-    async findBestByUserIdAndBeatmapMd5(userId: number, beatmapMd5: string, mode: OsuMode, relaxType: RelaxType): Promise<Score | null> {
+    async findBestByUserIdAndBeatmapMd5(
+        userId: number,
+        beatmapMd5: string,
+        mode: OsuMode,
+        relaxType: RelaxType
+    ): Promise<Score | null> {
         const table = scoresTableFromRelaxType(relaxType);
 
         const score = await this.database
             .selectFrom(table)
             .selectAll()
-            .where('userid', '=', userId)
-            .where('beatmap_md5', '=', beatmapMd5)
-            .where('play_mode', '=', mode)
-            .where('completed', '=', 3)
+            .where("userid", "=", userId)
+            .where("beatmap_md5", "=", beatmapMd5)
+            .where("play_mode", "=", mode)
+            .where("completed", "=", 3)
             .executeTakeFirst();
 
         return score !== undefined ? score : null;
@@ -317,5 +330,75 @@ export class ScoreRepository {
             .executeTakeFirstOrThrow();
 
         return result !== undefined ? result : null;
+    }
+
+    async findByScoreIdWithRank(
+        scoreId: number,
+        userId: number,
+        beatmapMd5: string,
+        mode: OsuMode,
+        relaxType: RelaxType,
+        sortColumn: "pp" | "score"
+    ): Promise<ScoreWithRank | null> {
+        const table = scoresTableFromRelaxType(relaxType);
+
+        const result = await this.database
+            .selectFrom(`${table} as s`)
+            .selectAll()
+            .innerJoin("users", "userid", "users.id")
+            .select(({ eb, selectFrom, or, and }) => [
+                selectFrom(`${table} as b`)
+                    .select((_) => sql<number>`COUNT(*) + 1`.as("rank"))
+                    .where("b.beatmap_md5", "=", beatmapMd5)
+                    .where("b.play_mode", "=", mode)
+                    .where("b.completed", "=", 3)
+                    .where(
+                        or([
+                            sql<boolean>`${eb.ref("privileges")} & 1 > 0`,
+                            eb("users.id", "=", userId),
+                        ])
+                    )
+                    .where(
+                        or([
+                            sql<boolean>`b.${sortColumn} > s.${sortColumn}`,
+                            and([
+                                sql<boolean>`b.${sortColumn} = s.${sortColumn}`,
+                                sql<boolean>`b.time < s.time`,
+                            ]),
+                        ])
+                    )
+                    .as("rank"),
+            ])
+            .where("s.id", "=", scoreId)
+            .executeTakeFirst();
+
+        return result !== undefined ? (result as ScoreWithRank) : null;
+    }
+
+    async findTop1000ScoresByUserId(
+        userId: number,
+        mode: OsuMode,
+        relaxType: RelaxType
+    ): Promise<TopScore[]> {
+        const table = scoresTableFromRelaxType(relaxType);
+
+        const scores = await this.database
+            .selectFrom(table)
+            .select("accuracy")
+            .select("pp")
+            .innerJoin(
+                "beatmaps",
+                `${table}.beatmap_md5`,
+                "beatmaps.beatmap_md5"
+            )
+            .where("completed", "=", 3)
+            .where("play_mode", "=", mode)
+            .where("ranked", "in", [2, 3])
+            .where("userid", "=", userId)
+            .orderBy("pp", "desc")
+            .limit(1000)
+            .execute();
+
+        return scores;
     }
 }
