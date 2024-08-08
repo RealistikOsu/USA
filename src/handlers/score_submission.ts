@@ -309,9 +309,9 @@ export const submitScore = async (
         await replayService.saveRawReplay(score.id, formData.files.score);
     }
 
-    if (previousBest !== null) {
+    if (scoreStatus === ScoreStatus.BEST) {
         await scoreService.updateScoreStatusToSubmitted(
-            previousBest.id,
+            previousBest!.id,
             relaxType
         );
     }
