@@ -18,7 +18,7 @@ const logger = new Logger({
     name: "UserService",
 });
 
-const EDIT_COLOUR = "4360181";
+const EDIT_COLOUR = 4360181;
 const EDIT_ICON_URL =
     "https://cdn3.iconfinder.com/data/icons/bold-blue-glyphs-free-samples/32/Info_Circle_Symbol_Information_Letter-512.png";
 
