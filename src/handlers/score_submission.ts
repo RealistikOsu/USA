@@ -199,6 +199,20 @@ export const submitScore = async (
     // TODO: lock all logic below by score checksum (requires adding checksum to scores)
     // TODO: check if score with current checksum exists (^)
 
+    const relaxType = relaxTypeFromMods(scoreData.mods);
+
+    const sameScoreExists = await scoreService.identicalScoreExists(
+        authenticatedUser.id,
+        beatmap.beatmap_md5,
+        scoreData.score,
+        scoreData.mode,
+        scoreData.mods,
+        relaxType,
+    );
+    if (sameScoreExists) {
+        return shutUpErrorResponse();
+    }
+
     if (!areModsRanked(scoreData.mods)) {
         return shutUpErrorResponse();
     }
@@ -230,7 +244,6 @@ export const submitScore = async (
         scoreData.countMisses
     );
 
-    const relaxType = relaxTypeFromMods(scoreData.mods);
     const exited = formData.fields.x == "1";
     const failed = !scoreData.passed && !exited;
 

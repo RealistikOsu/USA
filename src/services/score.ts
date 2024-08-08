@@ -114,4 +114,22 @@ export class ScoreService {
         );
         return scores;
     }
+
+    async identicalScoreExists(
+        userId: number,
+        beatmapMd5: string,
+        score: number,
+        mode: OsuMode,
+        mods: number,
+        relaxType: RelaxType,
+    ): Promise<boolean> {
+        return await this.scoreRepository.identicalScoreExists(
+            userId,
+            beatmapMd5,
+            score,
+            mode,
+            mods,
+            relaxType,
+        );
+    }
 }

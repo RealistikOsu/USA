@@ -401,4 +401,26 @@ export class ScoreRepository {
 
         return scores;
     }
+
+    async identicalScoreExists(
+        userId: number,
+        beatmapMd5: string,
+        score: number,
+        mode: OsuMode,
+        mods: number,
+        relaxType: RelaxType,
+    ): Promise<boolean> {
+        const table = scoresTableFromRelaxType(relaxType);
+
+        const existingScore = await this.database
+            .selectFrom(table)
+            .where("userid", "=", userId)
+            .where("beatmap_md5", "=", beatmapMd5)
+            .where("score", "=", score)
+            .where("play_mode", "=", mode)
+            .where("mods", "=", mods)
+            .executeTakeFirst();
+
+        return existingScore !== undefined;
+    }
 }
