@@ -156,7 +156,8 @@ export const registerContext = async (server: FastifyInstance) => {
             replayRepository,
             scoreRepository,
             userRepository,
-            userStatsService
+            userStatsService,
+            beatmapService,
         );
 
         const lastfmFlagRepository = new LastfmFlagRepository(database);
