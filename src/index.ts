@@ -1,4 +1,7 @@
 // eslint-disable-next-line check-file/no-index
+import tracer from "dd-trace";
+tracer.init();
+
 import { configDotenv } from "dotenv";
 configDotenv();
 
