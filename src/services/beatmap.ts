@@ -110,6 +110,9 @@ export class BeatmapService {
                     updatedBeatmap.ranked_status_freezed = true;
                     updatedBeatmap.ranked = oldBeatmap.ranked;
                 }
+            } else {
+                updatedBeatmap.playcount = 0;
+                updatedBeatmap.passcount = 0;
             }
 
             await this.beatmapRepository.createOrUpdate(updatedBeatmap);
