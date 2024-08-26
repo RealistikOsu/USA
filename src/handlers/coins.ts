@@ -35,17 +35,13 @@ export const getUserCoins = async (
 
     if (request.query.action === "check") {
         return user.coins;
-    }
-
-    if (request.query.action === "use") {
+    } else if (request.query.action === "use") {
         // inshallah we shall not trust the client
         let newCoins = Math.max(0, user.coins - 1);
 
         await userService.updateUserCoins(user.id, newCoins);
         return newCoins;
-    }
-
-    if (request.query.action === "recharge") {
+    } else if (request.query.action === "recharge") {
         let newCoins = Math.min(100, user.coins + 10);
 
         await userService.updateUserCoins(user.id, newCoins);
