@@ -128,6 +128,7 @@ interface UsersTable {
     disabled_comments: boolean;
     country: string;
     api_key: string;
+    coins: number;
 }
 
 interface ClansTable {

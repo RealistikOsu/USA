@@ -16,6 +16,7 @@ import { screenshotUploadHandler } from "./handlers/screenshot";
 import { getSeasonalBackgrounds } from "./handlers/seasonal_backgrounds";
 import { getUserFavourites, newUserFavourite } from "./handlers/user_favourite";
 import { getUserFriends } from "./handlers/user_relationships";
+import { getUserCoins } from "./handlers/coins";
 
 export const createRoutes = (server: FastifyInstance) => {
     server.get("/web/osu-getseasonal.php", getSeasonalBackgrounds);
@@ -42,6 +43,8 @@ export const createRoutes = (server: FastifyInstance) => {
     server.get("/web/osu-getfavourites.php", getUserFavourites);
 
     server.post("/web/osu-screenshot.php", screenshotUploadHandler);
+
+    server.get("/web/coins.php", getUserCoins);
 
     server.get("/health", getHealth);
 };
