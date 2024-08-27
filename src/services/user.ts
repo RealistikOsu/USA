@@ -62,7 +62,7 @@ export class UserService {
             from_id: BOT_USER_ID,
             to_id: user.id,
             summary,
-            detail: `USA Autoban: ${detail}`,
+            detail: `USA Autobahn: ${detail}`,
         });
 
         await this.redis.publish("peppy:ban", user.id.toString());
