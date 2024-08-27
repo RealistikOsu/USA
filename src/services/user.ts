@@ -35,6 +35,12 @@ export class UserService {
         });
     }
 
+    async updateUserCoins(userId: number, newCoins: number) {
+        await this.userRepository.updateUserById(userId, {
+            coins: newCoins,
+        });
+    }
+
     async restrict(userId: number, summary: string, detail: string) {
         const user = await this.userRepository.findById(userId);
         if (user === null) {
