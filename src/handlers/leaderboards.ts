@@ -31,6 +31,7 @@ interface BeatmapLeaderboardParameters {
     mods: string;
     h: string;
     a: string;
+    pp?: string;
 }
 
 export const beatmapLeaderboard = async (
@@ -60,6 +61,10 @@ export const beatmapLeaderboard = async (
     const mode = parseInt(request.query.m) as OsuMode;
     const relaxType = relaxTypeFromMods(mods);
     const leaderboardType = parseInt(request.query.v);
+    const usePerformancePointsLeaderboard =
+        request.query.pp !== undefined &&
+        (request.query.pp === "1" ||
+            request.query.pp === "1");
 
     const beatmapResult = await beatmapService.findByBeatmapMd5(
         request.query.c,
@@ -101,6 +106,7 @@ export const beatmapLeaderboard = async (
             requesteeUserId: authenticatedUser.id,
             relaxType: relaxType,
             leaderboardSize: (authenticatedUser.privileges & 4) > 0 ? 200 : 100,
+            sortByPerformancePoints: usePerformancePointsLeaderboard,
         };
 
         if (leaderboardType === 2) {

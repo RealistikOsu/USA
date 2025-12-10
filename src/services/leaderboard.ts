@@ -21,6 +21,7 @@ export interface FetchLeaderboardParameters {
     countryFilter?: string;
     userIdsFilter?: number[];
     leaderboardSize: number;
+    sortByPerformancePoints?: boolean;
 }
 
 export class LeaderboardService {
@@ -29,6 +30,10 @@ export class LeaderboardService {
     async fetchByBeatmapMd5(
         params: FetchLeaderboardParameters
     ): Promise<Leaderboard> {
+        const sortColumn = params.sortByPerformancePoints
+            ? "pp"
+            : sortColumnFromRelaxType(params.relaxType);
+
         const fetchManyScoresParameters: FetchManyScoresParameters = {
             beatmapMd5: params.beatmapMd5,
             playMode: params.playMode,
@@ -39,7 +44,7 @@ export class LeaderboardService {
             userIdsFilter: params.userIdsFilter,
             bestScoresOnly: params.modsFilter === undefined, // mod leaderboard requires non-bests
             scoreLimit: params.leaderboardSize,
-            sortColumn: sortColumnFromRelaxType(params.relaxType),
+            sortColumn,
         };
 
         const findByUserIdParameters: FindByUserIdParameters = {
@@ -49,7 +54,7 @@ export class LeaderboardService {
             relaxType: params.relaxType,
             modsFilter: params.modsFilter,
             bestScoresOnly: params.modsFilter === undefined, // mod leaderboard requires non-bests
-            sortColumn: sortColumnFromRelaxType(params.relaxType),
+            sortColumn,
         };
 
         const scores = await this.scoreRepository.fetchManyWithRankAndUsername(
