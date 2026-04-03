@@ -56,15 +56,24 @@ export const beatmapLeaderboard = async (
         return;
     }
 
-    const fileName = decodeURI(request.query.f);
+    let fileName = request.query.f;
+    try {
+        fileName = decodeURIComponent(fileName);
+    } catch (e) {
+        logger.warn("Malformed URI encountered in beatmapLeaderboard filename", {
+            filename: request.query.f,
+            error: e instanceof Error ? e.message : "Unknown error"
+        });
+    }
     const mods = parseInt(request.query.mods);
     const mode = parseInt(request.query.m) as OsuMode;
     const relaxType = relaxTypeFromMods(mods);
     const leaderboardType = parseInt(request.query.v);
-    const usePerformancePointsLeaderboard =
-        request.query.pp !== undefined &&
-        (request.query.pp === "1" ||
-            request.query.pp === "1");
+    
+    let usePerformancePointsLeaderboard: boolean | undefined = undefined;
+    if (request.query.pp !== undefined) {
+        usePerformancePointsLeaderboard = request.query.pp === "1" || request.query.pp === "true";
+    }
 
     const beatmapResult = await beatmapService.findByBeatmapMd5(
         request.query.c,
@@ -140,14 +149,14 @@ export const beatmapLeaderboard = async (
 
         if (leaderboard.personalBest !== null) {
             responseLines.push(
-                formatLeaderboardScore(relaxType, leaderboard.personalBest)
+                formatLeaderboardScore(relaxType, leaderboard.personalBest, usePerformancePointsLeaderboard)
             );
         } else {
             responseLines.push("");
         }
 
         for (const score of leaderboard.scores) {
-            responseLines.push(formatLeaderboardScore(relaxType, score));
+            responseLines.push(formatLeaderboardScore(relaxType, score, usePerformancePointsLeaderboard));
         }
     }
 

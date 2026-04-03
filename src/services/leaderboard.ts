@@ -30,9 +30,14 @@ export class LeaderboardService {
     async fetchByBeatmapMd5(
         params: FetchLeaderboardParameters
     ): Promise<Leaderboard> {
-        const sortColumn = params.sortByPerformancePoints
-            ? "pp"
-            : sortColumnFromRelaxType(params.relaxType);
+        let sortColumn: "pp" | "score";
+        if (params.sortByPerformancePoints === true) {
+            sortColumn = "pp";
+        } else if (params.sortByPerformancePoints === false) {
+            sortColumn = "score";
+        } else {
+            sortColumn = sortColumnFromRelaxType(params.relaxType);
+        }
 
         const fetchManyScoresParameters: FetchManyScoresParameters = {
             beatmapMd5: params.beatmapMd5,

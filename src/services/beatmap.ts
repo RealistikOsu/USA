@@ -1,5 +1,6 @@
 import { v2 } from "osu-api-extended";
 import { response as _OsuBeatmapset } from "osu-api-extended/dist/types/v2_beatmap_set_details";
+import { response as _OsuBeatmap } from "osu-api-extended/dist/types/v2_beatmap_id_details";
 
 import {
     osuApiBeatmapAndSetToRippleBeatmap,
@@ -33,6 +34,10 @@ interface OsuBeatmapset extends _OsuBeatmapset {
     error?: string;
 }
 
+interface OsuBeatmap extends _OsuBeatmap {
+    error?: string;
+}
+
 const OSU_MAP_NOT_FOUND_RESPONSE = "Specified beatmap couldn't be found.";
 
 export class BeatmapService {
@@ -50,17 +55,29 @@ export class BeatmapService {
         const existingBeatmaps =
             await this.beatmapRepository.fromBeatmapSetId(beatmapSetId);
 
-        if (
-            banchoBeatmapset.error === OSU_MAP_NOT_FOUND_RESPONSE ||
-            banchoBeatmaps.length === 0
-        ) {
+        if (banchoBeatmapset.error !== undefined) {
+            if (banchoBeatmapset.error === OSU_MAP_NOT_FOUND_RESPONSE) {
+                logger.debug(
+                    "Beatmap set has been unsubmitted on osu! API. Keeping local record.",
+                    {
+                        beatmapSetId: beatmapSetId,
+                    }
+                );
+                return [];
+            }
+
+            throw new Error(
+                `osu!api error fetching beatmap set ${beatmapSetId}: ${banchoBeatmapset.error}`
+            );
+        }
+
+        if (banchoBeatmaps === undefined || banchoBeatmaps.length === 0) {
             logger.debug(
-                "Beatmap set has been unsubmitted. Deleting all child difficulties",
+                "Beatmap set is empty (unsubmitted) on osu! API. Keeping local record.",
                 {
                     beatmapSetId: beatmapSetId,
                 }
             );
-            await this.beatmapRepository.deleteByBeatmapSetId(beatmapSetId);
             return [];
         }
 
@@ -75,13 +92,10 @@ export class BeatmapService {
 
             if (!found) {
                 logger.debug(
-                    "Beatmap has been unsubmitted. Deleting difficulty.",
+                    "Beatmap has been unsubmitted on osu! API. Keeping local record.",
                     {
                         beatmapId: existingBeatmap.beatmap_id,
                     }
-                );
-                await this.beatmapRepository.deleteByBeatmapId(
-                    existingBeatmap.beatmap_id
                 );
             }
         }
@@ -166,11 +180,12 @@ export class BeatmapService {
         );
 
         if (updatedBeatmap === null) {
-            logger.debug("Beatmap has been unsubmittied.", {
+            logger.debug("Beatmap has been unsubmitted on osu! API.", {
                 beatmapId: beatmap.beatmap_id,
             });
-            await this.beatmapRepository.deleteByBeatmapId(beatmap.beatmap_id);
-            return ServiceError.BEATMAP_UNSUBMITTED;
+            beatmap.latest_update = Math.floor(Date.now() / 1000);
+            await this.beatmapRepository.createOrUpdate(beatmap);
+            return beatmap;
         } else if (updatedBeatmap.beatmap_md5 !== beatmap.beatmap_md5) {
             logger.debug("Beatmap has been updated.", {
                 beatmapId: beatmap.beatmap_id,
@@ -300,10 +315,16 @@ export class BeatmapService {
     private async getBeatmapFromOsuApi(
         beatmapId: number
     ): Promise<Beatmap | null> {
-        const beatmap = await v2.beatmap.id.details(beatmapId);
+        const beatmap: OsuBeatmap = await v2.beatmap.id.details(beatmapId);
 
-        if (beatmap === null) {
+        if (beatmap === null || beatmap.error === OSU_MAP_NOT_FOUND_RESPONSE) {
             return null;
+        }
+
+        if (beatmap.error !== undefined) {
+            throw new Error(
+                `osu!api error fetching beatmap ${beatmapId}: ${beatmap.error}`
+            );
         }
 
         return osuApiBeatmapToRippleBeatmap(beatmap);
@@ -312,10 +333,18 @@ export class BeatmapService {
     private async getBeatmapFromOsuApiByChecksum(
         beatmapMd5: string
     ): Promise<Beatmap | null> {
-        const beatmap = await v2.beatmap.id.lookup({ checksum: beatmapMd5 });
+        const beatmap: OsuBeatmap = await v2.beatmap.id.lookup({
+            checksum: beatmapMd5,
+        });
 
-        if (beatmap === null) {
+        if (beatmap === null || beatmap.error === OSU_MAP_NOT_FOUND_RESPONSE) {
             return null;
+        }
+
+        if (beatmap.error !== undefined) {
+            throw new Error(
+                `osu!api error looking up beatmap ${beatmapMd5}: ${beatmap.error}`
+            );
         }
 
         return osuApiBeatmapToRippleBeatmap(beatmap);
