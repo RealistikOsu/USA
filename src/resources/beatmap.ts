@@ -3,7 +3,7 @@ import { Kysely } from "kysely";
 import { Beatmap, Database, NewBeatmap, UpdateBeatmap } from "../database";
 
 export class BeatmapRepository {
-    constructor(private database: Kysely<Database>) {}
+    constructor(private database: Kysely<Database>) { }
 
     async create(beatmap: NewBeatmap) {
         await this.database.insertInto("beatmaps").values(beatmap).execute();
@@ -46,7 +46,8 @@ export class BeatmapRepository {
     }
 
     async createOrUpdate(beatmap: NewBeatmap): Promise<Beatmap> {
-        const existingBeatmap = await this.findByMd5(beatmap.beatmap_md5);
+        const existingBeatmap = await this.findByMd5(beatmap.beatmap_md5) ??
+            await this.findByBeatmapId(beatmap.beatmap_id);
 
         if (existingBeatmap === null) {
             await this.create(beatmap);

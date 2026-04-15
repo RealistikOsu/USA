@@ -61,8 +61,8 @@
         }
     },
     "dependencies": {
-        "@fastify/multipart": "^8.3.0",
-        "@fastify/request-context": "^5.1.0",
+        "@fastify/multipart": "^9.0.0",
+        "@fastify/request-context": "^6.0.0",
         "@types/ioredis": "^5.0.0",
         "@vermaysha/discord-webhook": "^1.4.0",
         "axios": "^1.7.2",

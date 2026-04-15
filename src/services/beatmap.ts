@@ -41,7 +41,7 @@ interface OsuBeatmap extends _OsuBeatmap {
 const OSU_MAP_NOT_FOUND_RESPONSE = "Specified beatmap couldn't be found.";
 
 export class BeatmapService {
-    constructor(private beatmapRepository: BeatmapRepository) {}
+    constructor(private beatmapRepository: BeatmapRepository) { }
 
     private async discoverNewBeatmapSet(
         beatmapSetId: number
@@ -232,7 +232,7 @@ export class BeatmapService {
                 if (beatmap === null) {
                     return ServiceError.BEATMAP_UNSUBMITTED;
                 }
-                await this.beatmapRepository.create(beatmap);
+                await this.beatmapRepository.createOrUpdate(beatmap);
                 return beatmap;
             } else {
                 // Optimisation: Avoid osu!api calls if we have a fairly recent filename lookup.
@@ -241,8 +241,8 @@ export class BeatmapService {
                 if (
                     fileNameBeatmap !== null &&
                     fileNameBeatmap.latest_update -
-                        Math.floor(Date.now() / 1000) <
-                        ONE_DAY
+                    Math.floor(Date.now() / 1000) <
+                    ONE_DAY
                 ) {
                     return ServiceError.BEATMAP_UPDATE_REQUIRED;
                 }
@@ -289,7 +289,7 @@ export class BeatmapService {
                 if (beatmap === null) {
                     return ServiceError.BEATMAP_UNSUBMITTED;
                 }
-                await this.beatmapRepository.create(beatmap);
+                await this.beatmapRepository.createOrUpdate(beatmap);
                 return beatmap;
             } else {
                 const updatedSet = await this.discoverNewBeatmapSet(
