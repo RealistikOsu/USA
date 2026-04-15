@@ -17,7 +17,7 @@ export function osuDirectBeatmapsetFromCheesegullBeatmapset(
 export function osuDirectBeatmapFromCheesegullBeatmap(
     beatmap: CheesegullBeatmap
 ): string {
-    return `[${beatmap.difficultyRating.toFixed(2)}⭐] ${beatmap.version} {{cs: ${beatmap.circleSize} / od: ${beatmap.overallDifficulty} / ar: ${beatmap.approachRate} / hp: ${beatmap.healthPoints}}}`;
+    return `[${beatmap.difficultyRating.toFixed(2)}⭐] ${beatmap.version} {{cs: ${beatmap.circleSize} / od: ${beatmap.overallDifficulty} / ar: ${beatmap.approachRate} / hp: ${beatmap.healthPoints}}}@${beatmap.mode}`;
 }
 
 export function osuDirectBeatmapsetCardFromCheesegullBeatmapset(
