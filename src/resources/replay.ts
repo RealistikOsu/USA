@@ -12,16 +12,21 @@ export class ReplayRepository {
     ): Promise<ReplayWithoutHeaders | null> {
         const replayPath = createReplayPath(scoreId);
 
-        if (!fs.existsSync(replayPath)) {
+        try {
+            await fs.promises.access(replayPath);
+        } catch {
             return null;
         }
 
-        const rawBody = fs.readFileSync(replayPath);
+        const rawBody = await fs.promises.readFile(replayPath);
         return { rawBody };
     }
 
-    createFromScoreId(scoreId: number, replay: ReplayWithoutHeaders) {
-        fs.writeFileSync(createReplayPath(scoreId), replay.rawBody);
+    async createFromScoreId(scoreId: number, replay: ReplayWithoutHeaders) {
+        await fs.promises.writeFile(
+            createReplayPath(scoreId),
+            new Uint8Array(replay.rawBody)
+        );
     }
 }
 

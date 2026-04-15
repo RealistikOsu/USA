@@ -52,11 +52,14 @@ export function scoresTableFromRelaxType(
     return "scores";
 }
 
+export const RELAX_OFFSET = 1073741823;
+export const AP_OFFSET = 2000000000;
+
 export function approximateRelaxTypeFromScoreId(scoreId: number): RelaxType {
-    if (scoreId > 10000000) {
-        return 1;
-    } else if (scoreId > 20000000) {
+    if (scoreId >= AP_OFFSET) {
         return 2;
+    } else if (scoreId > RELAX_OFFSET) {
+        return 1;
     } else {
         return 0;
     }

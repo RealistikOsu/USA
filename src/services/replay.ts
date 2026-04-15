@@ -1,6 +1,6 @@
 import crypto from "crypto";
 
-import { writeOsuString } from "../adapters/binary";
+import { BinaryWriter } from "../adapters/binary";
 import { approximateRelaxTypeFromScoreId } from "../adapters/osu";
 import { assertNotNull } from "../asserts";
 import { Beatmap, Score, User } from "../database";
@@ -25,7 +25,7 @@ export class ReplayService {
         private userRepository: UserRepository,
         private userStatsService: UserStatsService,
         private beatmapService: BeatmapService
-    ) {}
+    ) { }
 
     async saveRawReplay(scoreId: number, replay: Buffer) {
         this.replayRepository.createFromScoreId(scoreId, {
@@ -93,22 +93,6 @@ export class ReplayService {
             return ServiceError.USER_NOT_FOUND;
         }
 
-        const userStats = await this.userStatsService.findByUserIdAndMode(
-            score.userid,
-            score.play_mode,
-            relaxType
-        );
-        assertNotNull(userStats);
-
-        await this.userStatsService.updateByUserIdAndMode(
-            score.userid,
-            score.play_mode,
-            relaxType,
-            {
-                replays_watched: userStats.replays_watched + 1,
-            }
-        );
-
         const beatmap = await this.beatmapService.findByBeatmapMd5(
             score.beatmap_md5
         );
@@ -121,35 +105,33 @@ export class ReplayService {
             .update(createBeatmapMd5BaseString(score, user))
             .digest("hex");
 
-        // "You have more important things to do like stats" - Nah ill count bytes
-        // 39 + extra bytes for string lengths, predicting those will be longer than
-        // the reallocation speed probably
-        const buffer = Buffer.alloc(100 + replay.rawBody.length);
+        const ticks = BigInt(score.time) * BigInt(10000000) + BigInt("621355968000000000");
 
-        // Writing the replay headers
-        buffer.writeUInt8(score.play_mode);
-        buffer.writeInt32LE(20191106);
-        writeOsuString(score.beatmap_md5, buffer);
-        writeOsuString(user.username, buffer);
-        writeOsuString(replayMd5, buffer);
-        buffer.writeInt16LE(score["300_count"]);
-        buffer.writeInt16LE(score["100_count"]);
-        buffer.writeInt16LE(score["50_count"]);
-        buffer.writeInt16LE(score.gekis_count);
-        buffer.writeInt16LE(score.katus_count);
-        buffer.writeInt16LE(score.misses_count);
-        buffer.writeInt32LE(score.score);
-        buffer.writeInt16LE(score.max_combo);
-        buffer.writeUInt8(score.full_combo ? 1 : 0);
-        buffer.writeInt32LE(score.mods);
-        buffer.writeUInt8(0);
-        buffer.writeInt32LE(score.time);
-        buffer.writeInt32LE(replay.rawBody.length);
-        replay.rawBody.copy(buffer);
-        buffer.writeInt32LE(score.id);
+        const writer = new BinaryWriter(128 + replay.rawBody.length);
+        writer
+            .writeU8(score.play_mode)
+            .writeI32LE(20260412)
+            .writeOsuString(score.beatmap_md5)
+            .writeOsuString(user.username)
+            .writeOsuString(replayMd5)
+            .writeI16LE(score["300_count"])
+            .writeI16LE(score["100_count"])
+            .writeI16LE(score["50_count"])
+            .writeI16LE(score.gekis_count)
+            .writeI16LE(score.katus_count)
+            .writeI16LE(score.misses_count)
+            .writeI32LE(score.score)
+            .writeI16LE(score.max_combo)
+            .writeU8(score.full_combo ? 1 : 0)
+            .writeI32LE(score.mods)
+            .writeU8(0)
+            .writeI64LE(ticks)
+            .writeI32LE(replay.rawBody.length)
+            .writeRaw(replay.rawBody)
+            .writeI64LE(BigInt(score.id));
 
         return {
-            rawBody: buffer,
+            rawBody: writer.data,
             score: score,
             user: user,
             beatmap: beatmap,
