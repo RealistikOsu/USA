@@ -13,13 +13,9 @@ import {
 } from "../adapters/osu_direct";
 import { Beatmap } from "../database";
 import { Logger } from "../logger";
+import { AuthenticateRequestParameters } from "../services/authentication";
 
-interface AuthenticateParameters {
-    u: string;
-    h: string;
-}
-
-interface OsuDirectSearchParameters extends AuthenticateParameters {
+interface OsuDirectSearchParameters extends AuthenticateRequestParameters {
     r: string;
     q: string;
     m: string;
@@ -90,7 +86,7 @@ export const osuDirectSearch = async (
     return `${osuDirectBeatmapsetCount}\n${osuDirectBeatmapsets.join("\n")}`;
 };
 
-interface OsuDirectBeatmapCardParameters extends AuthenticateParameters {
+interface OsuDirectBeatmapCardParameters extends AuthenticateRequestParameters {
     s?: string;
     b?: string;
 }

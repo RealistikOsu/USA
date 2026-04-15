@@ -18,7 +18,7 @@ export interface AuthenticateParameters {
 }
 
 export class AuthenticationService {
-    constructor(private userRepository: UserRepository) {}
+    constructor(private userRepository: UserRepository) { }
 
     private async canAuthenticateUser(
         username: string,
@@ -64,7 +64,7 @@ export class AuthenticationService {
         const validPossibilities = possibilities.filter(
             (a) => a.username !== undefined && a.password !== undefined
         );
-        if (validPossibilities.length !== 1) {
+        if (validPossibilities[0] === undefined) {
             return null;
         }
 
