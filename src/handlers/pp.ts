@@ -41,7 +41,7 @@ export const getPP = async (
     const beatmap = beatmapResult as Beatmap;
     const finalCombo = combo || beatmap.max_combo;
 
-    let ppResult: number | number[];
+    let ppResult: number[];
     let starRating = 0;
 
     if (acc === undefined) {
@@ -67,7 +67,7 @@ export const getPP = async (
             acc,
             0 // miss count
         );
-        ppResult = result.pp;
+        ppResult = [result.pp];
         starRating = result.stars;
     }
 
