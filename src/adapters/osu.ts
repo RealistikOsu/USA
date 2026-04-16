@@ -5,6 +5,7 @@ import { Beatmap, User } from "../database";
 export type RelaxType = 0 | 1 | 2;
 export type OsuMode = 0 | 1 | 2 | 3;
 export type OsuModeString = "std" | "taiko" | "ctb" | "mania";
+export type ScoreSortColumn = "pp" | "score";
 
 export function createOsuBeatmapEmbed(beatmap: Beatmap) {
     const url = `${config.serverBaseUrl}/beatmaps/${beatmap.beatmap_id}`;
@@ -83,7 +84,7 @@ export function userStatsTableFromRelaxType(
     }
 }
 
-export function sortColumnFromRelaxType(relaxType: RelaxType): "pp" | "score" {
+export function sortColumnFromRelaxType(relaxType: RelaxType): ScoreSortColumn {
     if (relaxType > 0) {
         return "pp";
     }

@@ -1,6 +1,11 @@
 import { Kysely, sql } from "kysely";
 
-import { OsuMode, RelaxType, scoresTableFromRelaxType } from "../adapters/osu";
+import {
+    OsuMode,
+    RelaxType,
+    ScoreSortColumn,
+    scoresTableFromRelaxType,
+} from "../adapters/osu";
 import { Database, NewScore, Score, UpdateScore } from "../database";
 
 export interface ScoreWithRank extends Score {
@@ -21,7 +26,7 @@ export interface FetchManyScoresParameters {
     userIdsFilter?: number[];
     bestScoresOnly: boolean;
     scoreLimit: number;
-    sortColumn: "pp" | "score";
+    sortColumn: ScoreSortColumn;
 }
 
 export interface FindByUserIdParameters {
@@ -31,7 +36,7 @@ export interface FindByUserIdParameters {
     userId: number;
     modsFilter?: number;
     bestScoresOnly: boolean;
-    sortColumn: "pp" | "score";
+    sortColumn: ScoreSortColumn;
 }
 
 export interface TopScore {
@@ -338,7 +343,7 @@ export class ScoreRepository {
         beatmapMd5: string,
         mode: OsuMode,
         relaxType: RelaxType,
-        sortColumn: "pp" | "score"
+        sortColumn: ScoreSortColumn
     ): Promise<ScoreWithRank | null> {
         const table = scoresTableFromRelaxType(relaxType);
 
