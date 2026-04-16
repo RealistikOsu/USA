@@ -18,6 +18,8 @@ const logger: Logger = new Logger({
     name: "LeaderboardHandler",
 });
 
+const SUPPORTER_PRIVILEGE = 4;
+
 interface BeatmapLeaderboardParameters {
     us: string;
     ha: string;
@@ -98,7 +100,8 @@ export const beatmapLeaderboard = async (
 
     const beatmap = beatmapResult as Beatmap;
 
-    if (!hasLeaderboard(beatmap)) {
+    const isSupporter = (authenticatedUser.privileges & SUPPORTER_PRIVILEGE) > 0;
+    if (!hasLeaderboard(beatmap) && !isSupporter) {
         return `${beatmap.ranked}|false`;
     }
 
@@ -114,7 +117,7 @@ export const beatmapLeaderboard = async (
             playMode: mode,
             requesteeUserId: authenticatedUser.id,
             relaxType: relaxType,
-            leaderboardSize: (authenticatedUser.privileges & 4) > 0 ? 200 : 100,
+            leaderboardSize: isSupporter ? 200 : 100,
             sortByPerformancePoints: usePerformancePointsLeaderboard,
         };
 
