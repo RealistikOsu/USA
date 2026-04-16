@@ -3,6 +3,7 @@ import { FastifyInstance } from "fastify";
 import { getBanchoConnect } from "./handlers/bancho_connect";
 import { getBeatmapRatings } from "./handlers/beatmap_ratings";
 import { getHealth } from "./handlers/health";
+import { getPP } from "./handlers/pp";
 import { getLastFM } from "./handlers/lastfm";
 import { beatmapLeaderboard } from "./handlers/leaderboards";
 import {
@@ -47,4 +48,5 @@ export const createRoutes = (server: FastifyInstance) => {
     server.get("/web/coins.php", getUserCoins);
 
     server.get("/health", getHealth);
+    server.get("/api/pp", getPP);
 };
