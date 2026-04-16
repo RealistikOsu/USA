@@ -1,5 +1,6 @@
 import cryptian from "cryptian";
 import { FastifyRequest } from "fastify";
+import { z } from "zod";
 
 import { notifyApiOfNewScore } from "../adapters/api";
 import { beatmapAwardsPerformance, hasLeaderboard } from "../adapters/beatmap";
@@ -18,90 +19,53 @@ const logger: Logger = new Logger({
     name: "ScoreSubmissionHandler",
 });
 
-interface FormData {
-    fields: ScoreSubmissionFormFields;
-    files: ScoreSubmissionFormFiles;
-}
-
-interface ScoreSubmissionFormFiles {
-    i: Buffer;
-    score: Buffer;
-}
-
-interface ScoreSubmissionFormFields {
-    x: string;
-    ft: string;
-    fs: string;
-    bmk: string;
-    sbk: string;
-    iv: string;
-    c1: string;
-    st: string;
-    pass: string;
-    osuver: string;
-    s: string;
-    score: string;
-}
-
 interface ScoreSubmissionHeaders {
     token?: string;
     "user-agent": string;
 }
 
-const FIELD_NAMES: ReadonlySet<keyof ScoreSubmissionFormFields> = new Set([
-    "x",
-    "ft",
-    "fs",
-    "bmk",
-    "sbk",
-    "iv",
-    "c1",
-    "st",
-    "pass",
-    "osuver",
-    "s",
-    "score",
-]);
+const ScoreSubmissionFormFieldsSchema = z.object({
+    x: z.string(),
+    ft: z.string(),
+    fs: z.string(),
+    bmk: z.string(),
+    sbk: z.string(),
+    iv: z.string(),
+    c1: z.string(),
+    st: z.string(),
+    pass: z.string(),
+    osuver: z.string(),
+    s: z.string(),
+    score: z.string(),
+});
+type ScoreSubmissionFormFields = z.infer<typeof ScoreSubmissionFormFieldsSchema>;
 
-const FILE_NAMES: ReadonlySet<keyof ScoreSubmissionFormFiles> = new Set([
-    "i",
-    "score",
-]);
+const ScoreSubmissionFormFilesSchema = z.object({
+    i: z.instanceof(Buffer),
+    score: z.instanceof(Buffer),
+});
+type ScoreSubmissionFormFiles = z.infer<typeof ScoreSubmissionFormFilesSchema>;
+
+interface FormData {
+    fields: ScoreSubmissionFormFields;
+    files: ScoreSubmissionFormFiles;
+}
 
 async function getFormData(request: FastifyRequest): Promise<FormData> {
-    const fields: Partial<ScoreSubmissionFormFields> = {};
-    const files: Partial<ScoreSubmissionFormFiles> = {};
+    const rawFields: Record<string, string> = {};
+    const rawFiles: Record<string, Buffer> = {};
 
     for await (const part of request.parts()) {
         if (part.type === "file") {
-            if (!(FILE_NAMES as ReadonlySet<string>).has(part.fieldname)) {
-                continue;
-            }
-            const name = part.fieldname as keyof ScoreSubmissionFormFiles;
-            files[name] = await part.toBuffer();
+            rawFiles[part.fieldname] = await part.toBuffer();
         } else {
-            if (!(FIELD_NAMES as ReadonlySet<string>).has(part.fieldname)) {
-                continue;
-            }
-            const name = part.fieldname as keyof ScoreSubmissionFormFields;
-            fields[name] = String(part.value);
-        }
-    }
-
-    for (const name of FIELD_NAMES) {
-        if (fields[name] === undefined) {
-            throw new Error(`missing score submission field: ${name}`);
-        }
-    }
-    for (const name of FILE_NAMES) {
-        if (files[name] === undefined) {
-            throw new Error(`missing score submission file: ${name}`);
+            rawFields[part.fieldname] = String(part.value);
         }
     }
 
     return {
-        fields: fields as ScoreSubmissionFormFields,
-        files: files as ScoreSubmissionFormFiles,
+        fields: ScoreSubmissionFormFieldsSchema.parse(rawFields),
+        files: ScoreSubmissionFormFilesSchema.parse(rawFiles),
     };
 }
 
