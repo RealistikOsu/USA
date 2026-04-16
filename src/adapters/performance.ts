@@ -1,5 +1,7 @@
 import axios from "axios";
 
+import { config } from "../config";
+
 export interface PerformanceResult {
     stars: number;
     pp: number;
@@ -19,7 +21,7 @@ export interface PerformanceRequest {
 }
 
 const performanceServiceInstance = axios.create({
-    baseURL: process.env.PERFORMANCE_SERVICE_BASE_URL,
+    baseURL: config.performanceServiceBaseUrl,
 });
 
 async function requestPerformances(

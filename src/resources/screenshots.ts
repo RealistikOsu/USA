@@ -1,6 +1,8 @@
 import * as fs from "fs";
 import { Redis } from "ioredis";
 
+import { config } from "../config";
+
 export interface SavedScreenshot {
     rawBody: Buffer;
 }
@@ -23,5 +25,5 @@ export class ScreenshotRepository {
 }
 
 function createScreenshotPath(name: string, format: "png" | "jpg") {
-    return `${process.env.PATH_TO_SCREENSHOTS}/${name}.${format}`;
+    return `${config.pathToScreenshots}/${name}.${format}`;
 }

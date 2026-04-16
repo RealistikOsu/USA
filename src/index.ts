@@ -6,6 +6,7 @@ import { configDotenv } from "dotenv";
 configDotenv();
 
 import { createApp } from "./app";
+import { config } from "./config";
 import { Logger } from "./logger";
 
 async function main() {
@@ -14,7 +15,7 @@ async function main() {
 
     server.listen(
         {
-            port: parseInt(process.env.SERVER_PORT),
+            port: config.serverPort,
             host: "0.0.0.0",
         },
         (err, address) => {
@@ -25,7 +26,7 @@ async function main() {
 
             logger.info("USA is listening!", {
                 address: address,
-                port: process.env.SERVER_PORT,
+                port: config.serverPort,
             });
         }
     );

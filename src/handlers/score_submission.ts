@@ -8,6 +8,7 @@ import { calculateAccuracy, OsuMode, relaxTypeFromMods } from "../adapters/osu";
 import { calculatePerformance } from "../adapters/performance";
 import { calculateScoreStatusForUser, ScoreStatus } from "../adapters/score";
 import { assertNotNull } from "../asserts";
+import { config } from "../config";
 import { Beatmap } from "../database";
 import { Logger } from "../logger";
 import { ScoreWithRank } from "../resources/score";
@@ -130,7 +131,7 @@ interface ScoreSubmissionData {
     clientHash: string;
 }
 
-const VERIFIED_BADGE_ID = parseInt(process.env.SERVER_VERIFIED_BADGE_ID);
+const VERIFIED_BADGE_ID = config.serverVerifiedBadgeId;
 
 function decryptScoreSubmissionData(formData: FormData): ScoreSubmissionData {
     const key = `osu!-scoreburgr---------${formData.fields.osuver}`;
@@ -668,13 +669,13 @@ function makeFinalChart(
         `approvedDate:${new Date(beatmap.latest_update * 1000).toISOString()}`,
         "\n",
         "chartId:beatmap",
-        `chartUrl:${process.env.SERVER_BASE_URL}/beatmaps/${beatmap.beatmap_id}`,
+        `chartUrl:${config.serverBaseUrl}/beatmaps/${beatmap.beatmap_id}`,
         "chartName:Beatmap Ranking",
         ...beatmapRankingChart,
         `onlineScoreId:${newScore.id}`,
         "\n",
         "chartId:overall",
-        `chartUrl:${process.env.SERVER_BASE_URL}/users/${userId}`,
+        `chartUrl:${config.serverBaseUrl}/users/${userId}`,
         "chartName:Overall Ranking",
         ...overallRankingChart,
         "achievements-new:", // TODO: achievements

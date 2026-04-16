@@ -1,5 +1,7 @@
 import axios from "axios";
 
+import { config } from "../config";
+
 export interface CheesegullBeatmap {
     id: number;
     beatmapsetId: number;
@@ -83,7 +85,7 @@ export interface BeatmapSearchParameters {
 }
 
 const beatmapServiceInstance = axios.create({
-    baseURL: process.env.BEATMAPS_SERVICE_BASE_URL,
+    baseURL: config.beatmapsServiceBaseUrl,
 });
 
 export async function searchCheesegullBeatmapsets(

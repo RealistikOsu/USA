@@ -1,5 +1,7 @@
 import * as fs from "fs";
 
+import { config } from "../config";
+
 export interface ReplayWithoutHeaders {
     rawBody: Buffer;
 }
@@ -31,5 +33,5 @@ export class ReplayRepository {
 }
 
 function createReplayPath(scoreId: number): string {
-    return `${process.env.PATH_TO_REPLAYS}/replay_${scoreId}.osr`;
+    return `${config.pathToReplays}/replay_${scoreId}.osr`;
 }

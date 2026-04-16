@@ -5,6 +5,7 @@ import { Kysely, MysqlDialect } from "kysely";
 import mysql from "mysql2";
 import { auth } from "osu-api-extended";
 
+import { config } from "./config";
 import { Database } from "./database";
 import { BanLogRepository } from "./resources/ban_log";
 import { BeatmapRepository } from "./resources/beatmap";
@@ -78,11 +79,11 @@ declare module "@fastify/request-context" {
 async function createDatabase() {
     const dialect = new MysqlDialect({
         pool: mysql.createPool({
-            host: process.env.DATABASE_HOST,
-            port: parseInt(process.env.DATABASE_PORT),
-            user: process.env.DATABASE_USER,
-            password: process.env.DATABASE_PASSWORD,
-            database: process.env.DATABASE_NAME,
+            host: config.databaseHost,
+            port: config.databasePort,
+            user: config.databaseUser,
+            password: config.databasePassword,
+            database: config.databaseName,
         }),
     });
 
@@ -90,15 +91,13 @@ async function createDatabase() {
 }
 
 async function authenticateOsuApi() {
-    await auth.login(
-        parseInt(process.env.OSU_API_V2_CLIENT_ID),
-        process.env.OSU_API_V2_CLIENT_SECRET,
-        ["public"]
-    );
+    await auth.login(config.osuApiV2ClientId, config.osuApiV2ClientSecret, [
+        "public",
+    ]);
 }
 
 function createRedis(): Redis {
-    return new Redis(parseInt(process.env.REDIS_PORT), process.env.REDIS_HOST);
+    return new Redis(config.redisPort, config.redisHost);
 }
 
 export const registerContext = async (server: FastifyInstance) => {

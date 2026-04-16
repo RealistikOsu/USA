@@ -11,6 +11,7 @@ import {
     osuDirectBeatmapsetCardFromCheesegullBeatmapset,
     osuDirectBeatmapsetFromCheesegullBeatmapset,
 } from "../adapters/osu_direct";
+import { config } from "../config";
 import { Beatmap } from "../database";
 import { Logger } from "../logger";
 import { AuthenticateRequestParameters } from "../services/authentication";
@@ -156,7 +157,7 @@ export const downloadBeatmapset = async (
     reply: FastifyReply
 ) => {
     reply.redirect(
-        `${process.env.BEATMAP_DOWNLOAD_MIRROR_BASE_URL}/d/${request.params.beatmapsetId}`,
+        `${config.beatmapDownloadMirrorBaseUrl}/d/${request.params.beatmapsetId}`,
         HttpStatusCode.MovedPermanently
     );
 };

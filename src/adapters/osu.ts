@@ -1,4 +1,5 @@
 import { assertNever } from "../asserts";
+import { config } from "../config";
 import { Beatmap, User } from "../database";
 
 export type RelaxType = 0 | 1 | 2;
@@ -6,12 +7,12 @@ export type OsuMode = 0 | 1 | 2 | 3;
 export type OsuModeString = "std" | "taiko" | "ctb" | "mania";
 
 export function createOsuBeatmapEmbed(beatmap: Beatmap) {
-    const url = `${process.env.SERVER_BASE_URL}/beatmaps/${beatmap.beatmap_id}`;
+    const url = `${config.serverBaseUrl}/beatmaps/${beatmap.beatmap_id}`;
     return `[${url} ${beatmap.song_name}]`;
 }
 
 export function createOsuUserEmbed(user: User) {
-    const url = `${process.env.SERVER_BASE_URL}/users/${user.id}`;
+    const url = `${config.serverBaseUrl}/users/${user.id}`;
     return `[${url} ${user.username}]`;
 }
 
