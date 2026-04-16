@@ -1,6 +1,12 @@
 import { Kysely, sql } from "kysely";
 
-import { OsuMode, RelaxType, scoresTableFromRelaxType } from "../adapters/osu";
+import {
+    OsuMode,
+    RelaxType,
+    ScoreSortColumn,
+    scoresTableFromRelaxType,
+} from "../adapters/osu";
+import { ScoreStatus } from "../adapters/score";
 import { Database, NewScore, Score, UpdateScore } from "../database";
 
 export interface ScoreWithRank extends Score {
@@ -21,7 +27,7 @@ export interface FetchManyScoresParameters {
     userIdsFilter?: number[];
     bestScoresOnly: boolean;
     scoreLimit: number;
-    sortColumn: "pp" | "score";
+    sortColumn: ScoreSortColumn;
 }
 
 export interface FindByUserIdParameters {
@@ -31,7 +37,7 @@ export interface FindByUserIdParameters {
     userId: number;
     modsFilter?: number;
     bestScoresOnly: boolean;
-    sortColumn: "pp" | "score";
+    sortColumn: ScoreSortColumn;
 }
 
 export interface TopScore {
@@ -82,10 +88,10 @@ export class ScoreRepository {
             .where("userid", "=", userId)
             .where("beatmap_md5", "=", beatmapMd5)
             .where("play_mode", "=", mode)
-            .where("completed", "=", 3)
+            .where("completed", "=", ScoreStatus.BEST)
             .executeTakeFirst();
 
-        return score !== undefined ? score : null;
+        return score ?? null;
     }
 
     async findByUserIdWithRankAndUsername(
@@ -119,9 +125,12 @@ export class ScoreRepository {
                     );
 
                 if (params.bestScoresOnly) {
-                    cteQuery = cteQuery.where("completed", "=", 3);
+                    cteQuery = cteQuery.where("completed", "=", ScoreStatus.BEST);
                 } else {
-                    cteQuery = cteQuery.where("completed", "in", [2, 3]);
+                    cteQuery = cteQuery.where("completed", "in", [
+                        ScoreStatus.SUBMITTED,
+                        ScoreStatus.BEST,
+                    ]);
                 }
 
                 if (params.modsFilter !== undefined) {
@@ -150,7 +159,7 @@ export class ScoreRepository {
             .limit(1)
             .executeTakeFirst();
 
-        return score !== undefined ? score : null;
+        return score ?? null;
     }
 
     async fetchManyWithRankAndUsername(
@@ -184,9 +193,12 @@ export class ScoreRepository {
                     );
 
                 if (params.bestScoresOnly) {
-                    cteQuery = cteQuery.where("completed", "=", 3);
+                    cteQuery = cteQuery.where("completed", "=", ScoreStatus.BEST);
                 } else {
-                    cteQuery = cteQuery.where("completed", "in", [2, 3]);
+                    cteQuery = cteQuery.where("completed", "in", [
+                        ScoreStatus.SUBMITTED,
+                        ScoreStatus.BEST,
+                    ]);
                 }
 
                 if (params.modsFilter !== undefined) {
@@ -272,9 +284,12 @@ export class ScoreRepository {
                     );
 
                 if (params.bestScoresOnly) {
-                    cteQuery = cteQuery.where("completed", "=", 3);
+                    cteQuery = cteQuery.where("completed", "=", ScoreStatus.BEST);
                 } else {
-                    cteQuery = cteQuery.where("completed", "in", [2, 3]);
+                    cteQuery = cteQuery.where("completed", "in", [
+                        ScoreStatus.SUBMITTED,
+                        ScoreStatus.BEST,
+                    ]);
                 }
 
                 if (params.modsFilter !== undefined) {
@@ -323,13 +338,13 @@ export class ScoreRepository {
     ): Promise<Score | null> {
         const table = scoresTableFromRelaxType(relaxType);
 
-        const result = this.database
+        const result = await this.database
             .selectFrom(table)
             .selectAll()
             .where("id", "=", scoreId)
-            .executeTakeFirstOrThrow();
+            .executeTakeFirst();
 
-        return result !== undefined ? result : null;
+        return result ?? null;
     }
 
     async findByScoreIdWithRank(
@@ -338,7 +353,7 @@ export class ScoreRepository {
         beatmapMd5: string,
         mode: OsuMode,
         relaxType: RelaxType,
-        sortColumn: "pp" | "score"
+        sortColumn: ScoreSortColumn
     ): Promise<ScoreWithRank | null> {
         const table = scoresTableFromRelaxType(relaxType);
 
@@ -372,7 +387,7 @@ export class ScoreRepository {
             .where("s.id", "=", scoreId)
             .executeTakeFirst();
 
-        return result !== undefined ? (result as ScoreWithRank) : null;
+        return (result as ScoreWithRank | undefined) ?? null;
     }
 
     async findTop1000ScoresByUserId(
@@ -391,7 +406,7 @@ export class ScoreRepository {
                 `${table}.beatmap_md5`,
                 "beatmaps.beatmap_md5"
             )
-            .where("completed", "=", 3)
+            .where("completed", "=", ScoreStatus.BEST)
             .where("play_mode", "=", mode)
             .where("ranked", "in", [2, 3])
             .where("userid", "=", userId)

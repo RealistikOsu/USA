@@ -1,13 +1,15 @@
 import cryptian from "cryptian";
 import { FastifyRequest } from "fastify";
+import { z } from "zod";
 
 import { notifyApiOfNewScore } from "../adapters/api";
 import { beatmapAwardsPerformance, hasLeaderboard } from "../adapters/beatmap";
 import { getCurrentUnixTimestamp } from "../adapters/datetime";
-import { calculateAccuracy, OsuMode, relaxTypeFromMods } from "../adapters/osu";
+import { calculateAccuracy, relaxTypeFromMods } from "../adapters/osu";
 import { calculatePerformance } from "../adapters/performance";
 import { calculateScoreStatusForUser, ScoreStatus } from "../adapters/score";
 import { assertNotNull } from "../asserts";
+import { config } from "../config";
 import { Beatmap } from "../database";
 import { Logger } from "../logger";
 import { ScoreWithRank } from "../resources/score";
@@ -17,86 +19,122 @@ const logger: Logger = new Logger({
     name: "ScoreSubmissionHandler",
 });
 
-interface FormData {
-    fields: ScoreSubmissionFormFields;
-    files: ScoreSubmissionFormFiles;
-}
-
-interface ScoreSubmissionFormFiles {
-    i: Buffer;
-    score: Buffer;
-}
-
-interface ScoreSubmissionFormFields {
-    x: string;
-    ft: string;
-    fs: string;
-    bmk: string;
-    sbk: string;
-    iv: string;
-    c1: string;
-    st: string;
-    pass: string;
-    osuver: string;
-    s: string;
-    score: string;
-}
-
 interface ScoreSubmissionHeaders {
     token?: string;
     "user-agent": string;
 }
 
+const ScoreSubmissionFormFieldsSchema = z.object({
+    x: z.string(),
+    ft: z.string(),
+    fs: z.string(),
+    bmk: z.string(),
+    sbk: z.string(),
+    iv: z.string(),
+    c1: z.string(),
+    st: z.string(),
+    pass: z.string(),
+    osuver: z.string(),
+    s: z.string(),
+    score: z.string(),
+});
+type ScoreSubmissionFormFields = z.infer<typeof ScoreSubmissionFormFieldsSchema>;
+
+const ScoreSubmissionFormFilesSchema = z.object({
+    i: z.instanceof(Buffer),
+    score: z.instanceof(Buffer),
+});
+type ScoreSubmissionFormFiles = z.infer<typeof ScoreSubmissionFormFilesSchema>;
+
+interface FormData {
+    fields: ScoreSubmissionFormFields;
+    files: ScoreSubmissionFormFiles;
+}
+
 async function getFormData(request: FastifyRequest): Promise<FormData> {
-    const parts = request.parts();
+    const rawFields: Record<string, string> = {};
+    const rawFiles: Record<string, Buffer> = {};
 
-    // TODO: figure out how to type these better without abusing `as`
-    const fields: any = {};
-    const files: any = {};
-
-    for await (const part of parts) {
+    for await (const part of request.parts()) {
         if (part.type === "file") {
-            const fileData = await part.toBuffer();
-            files[part.fieldname as keyof ScoreSubmissionFormFiles] = fileData;
+            rawFiles[part.fieldname] = await part.toBuffer();
         } else {
-            fields[part.fieldname as keyof ScoreSubmissionFormFields] =
-                part.value;
+            rawFields[part.fieldname] = String(part.value);
         }
     }
 
     return {
-        fields,
-        files,
+        fields: ScoreSubmissionFormFieldsSchema.parse(rawFields),
+        files: ScoreSubmissionFormFilesSchema.parse(rawFiles),
     };
 }
 
-interface ScoreData {
-    beatmapMd5: string;
-    username: string;
-    scoreChecksum: string;
-    count300s: number;
-    count100s: number;
-    count50s: number;
-    countGekis: number;
-    countKatus: number;
-    countMisses: number;
-    score: number;
-    maxCombo: number;
-    fullCombo: boolean;
-    rank: string;
-    mods: number;
-    passed: boolean;
-    mode: OsuMode;
-    // some unknown number here, maybe timestamp?
-    osuVersion: string;
-}
+const BoolStringSchema = z
+    .enum(["True", "False"])
+    .transform((v) => v === "True");
+
+const OsuModeSchema = z.coerce
+    .number()
+    .int()
+    .pipe(
+        z.union([
+            z.literal(0),
+            z.literal(1),
+            z.literal(2),
+            z.literal(3),
+        ]),
+    );
+
+const ScoreDataSchema = z
+    .tuple([
+        z.string(), // 0: beatmapMd5
+        z.string(), // 1: username (trim supporter "pace")
+        z.string(), // 2: scoreChecksum
+        z.coerce.number().int(), // 3: count300s
+        z.coerce.number().int(), // 4: count100s
+        z.coerce.number().int(), // 5: count50s
+        z.coerce.number().int(), // 6: countGekis
+        z.coerce.number().int(), // 7: countKatus
+        z.coerce.number().int(), // 8: countMisses
+        z.coerce.number().int(), // 9: score
+        z.coerce.number().int(), // 10: maxCombo
+        BoolStringSchema, // 11: fullCombo
+        z.string(), // 12: rank
+        z.coerce.number().int(), // 13: mods
+        BoolStringSchema, // 14: passed
+        OsuModeSchema, // 15: mode
+        z.string(), // 16: skipped (unknown; maybe timestamp)
+        z.string(), // 17: osuVersion
+    ])
+    .rest(z.string())
+    .transform((t) => ({
+        beatmapMd5: t[0],
+        username: t[1].trimEnd(),
+        scoreChecksum: t[2],
+        count300s: t[3],
+        count100s: t[4],
+        count50s: t[5],
+        countGekis: t[6],
+        countKatus: t[7],
+        countMisses: t[8],
+        score: t[9],
+        maxCombo: t[10],
+        fullCombo: t[11],
+        rank: t[12],
+        mods: t[13],
+        passed: t[14],
+        mode: t[15],
+        osuVersion: t[17],
+    }));
+
+type ScoreData = z.infer<typeof ScoreDataSchema>;
 
 interface ScoreSubmissionData {
     scoreData: ScoreData;
     clientHash: string;
 }
 
-const VERIFIED_BADGE_ID = parseInt(process.env.SERVER_VERIFIED_BADGE_ID);
+const VERIFIED_BADGE_ID = config.serverVerifiedBadgeId;
 
 function decryptScoreSubmissionData(formData: FormData): ScoreSubmissionData {
     const key = `osu!-scoreburgr---------${formData.fields.osuver}`;
@@ -116,30 +154,8 @@ function decryptScoreSubmissionData(formData: FormData): ScoreSubmissionData {
         Buffer.from(formData.fields.s, "base64")
     );
 
-    const scoreDataArray = scoreData.toString().split(":");
-
     return {
-        scoreData: {
-            beatmapMd5: scoreDataArray[0],
-            username: scoreDataArray[1].trimEnd(), // trim supporter "pace"
-            scoreChecksum: scoreDataArray[2],
-            count300s: parseInt(scoreDataArray[3]),
-            count100s: parseInt(scoreDataArray[4]),
-            count50s: parseInt(scoreDataArray[5]),
-            countGekis: parseInt(scoreDataArray[6]),
-            countKatus: parseInt(scoreDataArray[7]),
-            countMisses: parseInt(scoreDataArray[8]),
-            score: parseInt(scoreDataArray[9]),
-            maxCombo: parseInt(scoreDataArray[10]),
-            fullCombo: scoreDataArray[11] === "True",
-            rank: scoreDataArray[12],
-            mods: parseInt(scoreDataArray[13]),
-            passed: scoreDataArray[14] === "True",
-            mode: parseInt(scoreDataArray[15]) as OsuMode,
-            // skipped value here
-            osuVersion: scoreDataArray[17],
-            // skipped value here
-        },
+        scoreData: ScoreDataSchema.parse(scoreData.toString().split(":")),
         clientHash: clientHash.toString(),
     };
 }
@@ -393,9 +409,7 @@ export const submitScore = async (
         let totalAcc = 0;
         let lastIndex = 0;
 
-        for (let index = 0; index < top100Scores.length; index++) {
-            const score = top100Scores[index];
-
+        for (const [index, score] of top100Scores.entries()) {
             totalPp += score.pp * Math.pow(0.95, index);
             totalAcc += score.accuracy * Math.pow(0.95, index);
 
@@ -634,13 +648,13 @@ function makeFinalChart(
         `approvedDate:${new Date(beatmap.latest_update * 1000).toISOString()}`,
         "\n",
         "chartId:beatmap",
-        `chartUrl:${process.env.SERVER_BASE_URL}/beatmaps/${beatmap.beatmap_id}`,
+        `chartUrl:${config.serverBaseUrl}/beatmaps/${beatmap.beatmap_id}`,
         "chartName:Beatmap Ranking",
         ...beatmapRankingChart,
         `onlineScoreId:${newScore.id}`,
         "\n",
         "chartId:overall",
-        `chartUrl:${process.env.SERVER_BASE_URL}/users/${userId}`,
+        `chartUrl:${config.serverBaseUrl}/users/${userId}`,
         "chartName:Overall Ranking",
         ...overallRankingChart,
         "achievements-new:", // TODO: achievements

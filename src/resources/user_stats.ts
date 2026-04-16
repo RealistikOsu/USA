@@ -8,7 +8,7 @@ export class UserStatsRepository {
 
     async fromUserId(
         userId: number,
-        relaxMode: number
+        relaxMode: RelaxType
     ): Promise<UserStats | null> {
         const relaxTable = userStatsTableFromRelaxType(relaxMode);
 
@@ -18,7 +18,7 @@ export class UserStatsRepository {
             .where("id", "=", userId)
             .executeTakeFirstOrThrow();
 
-        return result !== undefined ? result : null;
+        return result ?? null;
     }
 
     async updateByUserId(

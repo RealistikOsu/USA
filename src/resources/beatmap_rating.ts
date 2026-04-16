@@ -49,6 +49,6 @@ export class BeatmapRatingRepository {
             .selectAll()
             .executeTakeFirst();
 
-        return rating !== undefined ? rating : null;
+        return rating ?? null;
     }
 }

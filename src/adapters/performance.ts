@@ -1,5 +1,7 @@
 import axios from "axios";
 
+import { config } from "../config";
+
 export interface PerformanceResult {
     stars: number;
     pp: number;
@@ -19,7 +21,7 @@ export interface PerformanceRequest {
 }
 
 const performanceServiceInstance = axios.create({
-    baseURL: process.env.PERFORMANCE_SERVICE_BASE_URL,
+    baseURL: config.performanceServiceBaseUrl,
 });
 
 async function requestPerformances(
@@ -55,8 +57,11 @@ export async function calculatePerformance(
         passed_objects,
     };
 
-    const responses = await requestPerformances([request]);
-    return responses[0];
+    const [response] = await requestPerformances([request]);
+    if (response === undefined) {
+        throw new Error("performance service returned no results");
+    }
+    return response;
 }
 
 export async function calculatePerformances(

@@ -3,6 +3,7 @@ import { Redis } from "ioredis";
 
 import { getCurrentUnixTimestamp } from "../adapters/datetime";
 import { assertNotNull } from "../asserts";
+import { config } from "../config";
 import { User } from "../database";
 import { Logger } from "../logger";
 import { BanLogRepository } from "../resources/ban_log";
@@ -83,11 +84,11 @@ export class UserService {
     }
 
     private async sendRestrictedWebhook(user: User, reason: string) {
-        if (!process.env.ADMIN_WEBHOOK_URL) {
+        if (config.adminWebhookUrl === undefined) {
             return;
         }
 
-        const webhook = new Webhook(process.env.ADMIN_WEBHOOK_URL);
+        const webhook = new Webhook(config.adminWebhookUrl);
         const embed = new Embed();
 
         embed.setTitle("User Edited!");

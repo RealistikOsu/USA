@@ -1,4 +1,9 @@
-import { OsuMode, RelaxType, sortColumnFromRelaxType } from "../adapters/osu";
+import {
+    OsuMode,
+    RelaxType,
+    ScoreSortColumn,
+    sortColumnFromRelaxType,
+} from "../adapters/osu";
 import {
     FetchManyScoresParameters,
     FindByUserIdParameters,
@@ -30,7 +35,7 @@ export class LeaderboardService {
     async fetchByBeatmapMd5(
         params: FetchLeaderboardParameters
     ): Promise<Leaderboard> {
-        let sortColumn: "pp" | "score";
+        let sortColumn: ScoreSortColumn;
         if (params.sortByPerformancePoints === true) {
             sortColumn = "pp";
         } else if (params.sortByPerformancePoints === false) {

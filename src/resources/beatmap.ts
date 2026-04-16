@@ -16,7 +16,7 @@ export class BeatmapRepository {
             .selectAll()
             .executeTakeFirst();
 
-        return beatmap !== undefined ? beatmap : null;
+        return beatmap ?? null;
     }
 
     async findByMd5(beatmapMd5: string): Promise<Beatmap | null> {
@@ -26,7 +26,7 @@ export class BeatmapRepository {
             .selectAll()
             .executeTakeFirst();
 
-        return beatmap !== undefined ? beatmap : null;
+        return beatmap ?? null;
     }
 
     async updateByBeatmapId(beatmapId: number, update: UpdateBeatmap) {
@@ -65,7 +65,7 @@ export class BeatmapRepository {
             .selectAll()
             .executeTakeFirst();
 
-        return beatmap !== undefined ? beatmap : null;
+        return beatmap ?? null;
     }
 
     async deleteByBeatmapId(beatmapId: number) {

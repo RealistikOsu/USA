@@ -50,6 +50,6 @@ export class UserFavouriteRepository {
             .selectAll()
             .executeTakeFirstOrThrow();
 
-        return favourite !== undefined ? favourite : null;
+        return favourite ?? null;
     }
 }
