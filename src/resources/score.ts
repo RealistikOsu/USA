@@ -6,6 +6,7 @@ import {
     ScoreSortColumn,
     scoresTableFromRelaxType,
 } from "../adapters/osu";
+import { ScoreStatus } from "../adapters/score";
 import { Database, NewScore, Score, UpdateScore } from "../database";
 
 export interface ScoreWithRank extends Score {
@@ -87,7 +88,7 @@ export class ScoreRepository {
             .where("userid", "=", userId)
             .where("beatmap_md5", "=", beatmapMd5)
             .where("play_mode", "=", mode)
-            .where("completed", "=", 3)
+            .where("completed", "=", ScoreStatus.BEST)
             .executeTakeFirst();
 
         return score ?? null;
@@ -124,9 +125,12 @@ export class ScoreRepository {
                     );
 
                 if (params.bestScoresOnly) {
-                    cteQuery = cteQuery.where("completed", "=", 3);
+                    cteQuery = cteQuery.where("completed", "=", ScoreStatus.BEST);
                 } else {
-                    cteQuery = cteQuery.where("completed", "in", [2, 3]);
+                    cteQuery = cteQuery.where("completed", "in", [
+                        ScoreStatus.SUBMITTED,
+                        ScoreStatus.BEST,
+                    ]);
                 }
 
                 if (params.modsFilter !== undefined) {
@@ -189,9 +193,12 @@ export class ScoreRepository {
                     );
 
                 if (params.bestScoresOnly) {
-                    cteQuery = cteQuery.where("completed", "=", 3);
+                    cteQuery = cteQuery.where("completed", "=", ScoreStatus.BEST);
                 } else {
-                    cteQuery = cteQuery.where("completed", "in", [2, 3]);
+                    cteQuery = cteQuery.where("completed", "in", [
+                        ScoreStatus.SUBMITTED,
+                        ScoreStatus.BEST,
+                    ]);
                 }
 
                 if (params.modsFilter !== undefined) {
@@ -277,9 +284,12 @@ export class ScoreRepository {
                     );
 
                 if (params.bestScoresOnly) {
-                    cteQuery = cteQuery.where("completed", "=", 3);
+                    cteQuery = cteQuery.where("completed", "=", ScoreStatus.BEST);
                 } else {
-                    cteQuery = cteQuery.where("completed", "in", [2, 3]);
+                    cteQuery = cteQuery.where("completed", "in", [
+                        ScoreStatus.SUBMITTED,
+                        ScoreStatus.BEST,
+                    ]);
                 }
 
                 if (params.modsFilter !== undefined) {
@@ -396,7 +406,7 @@ export class ScoreRepository {
                 `${table}.beatmap_md5`,
                 "beatmaps.beatmap_md5"
             )
-            .where("completed", "=", 3)
+            .where("completed", "=", ScoreStatus.BEST)
             .where("play_mode", "=", mode)
             .where("ranked", "in", [2, 3])
             .where("userid", "=", userId)
