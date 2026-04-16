@@ -1,3 +1,4 @@
+import { assertNever } from "../asserts";
 import { Beatmap, User } from "../database";
 
 export type RelaxType = 0 | 1 | 2;
@@ -14,7 +15,7 @@ export function createOsuUserEmbed(user: User) {
     return `[${url} ${user.username}]`;
 }
 
-export function formatRelaxType(relaxType: RelaxType) {
+export function formatRelaxType(relaxType: RelaxType): "VN" | "RX" | "AP" {
     if (relaxType === 0) {
         return "VN";
     } else if (relaxType === 1) {
@@ -22,6 +23,7 @@ export function formatRelaxType(relaxType: RelaxType) {
     } else if (relaxType === 2) {
         return "AP";
     }
+    return assertNever(relaxType);
 }
 
 export function relaxTypeFromMods(mods: number) {
@@ -66,15 +68,17 @@ export function approximateRelaxTypeFromScoreId(scoreId: number): RelaxType {
 }
 
 export function userStatsTableFromRelaxType(
-    relaxType: number
+    relaxType: RelaxType
 ): "users_stats" | "rx_stats" | "ap_stats" {
     switch (relaxType) {
         case 1:
             return "rx_stats";
         case 2:
             return "ap_stats";
-        default:
+        case 0:
             return "users_stats";
+        default:
+            return assertNever(relaxType);
     }
 }
 
@@ -151,5 +155,7 @@ export function calculateAccuracy(
                 (totalHits * 300.0)
             );
         }
+        default:
+            return assertNever(mode);
     }
 }

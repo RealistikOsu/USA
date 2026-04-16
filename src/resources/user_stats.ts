@@ -8,7 +8,7 @@ export class UserStatsRepository {
 
     async fromUserId(
         userId: number,
-        relaxMode: number
+        relaxMode: RelaxType
     ): Promise<UserStats | null> {
         const relaxTable = userStatsTableFromRelaxType(relaxMode);
 
