@@ -47,26 +47,60 @@ interface ScoreSubmissionHeaders {
     "user-agent": string;
 }
 
+const FIELD_NAMES: ReadonlySet<keyof ScoreSubmissionFormFields> = new Set([
+    "x",
+    "ft",
+    "fs",
+    "bmk",
+    "sbk",
+    "iv",
+    "c1",
+    "st",
+    "pass",
+    "osuver",
+    "s",
+    "score",
+]);
+
+const FILE_NAMES: ReadonlySet<keyof ScoreSubmissionFormFiles> = new Set([
+    "i",
+    "score",
+]);
+
 async function getFormData(request: FastifyRequest): Promise<FormData> {
-    const parts = request.parts();
+    const fields: Partial<ScoreSubmissionFormFields> = {};
+    const files: Partial<ScoreSubmissionFormFiles> = {};
 
-    // TODO: figure out how to type these better without abusing `as`
-    const fields: any = {};
-    const files: any = {};
-
-    for await (const part of parts) {
+    for await (const part of request.parts()) {
         if (part.type === "file") {
-            const fileData = await part.toBuffer();
-            files[part.fieldname as keyof ScoreSubmissionFormFiles] = fileData;
+            if (!(FILE_NAMES as ReadonlySet<string>).has(part.fieldname)) {
+                continue;
+            }
+            const name = part.fieldname as keyof ScoreSubmissionFormFiles;
+            files[name] = await part.toBuffer();
         } else {
-            fields[part.fieldname as keyof ScoreSubmissionFormFields] =
-                part.value;
+            if (!(FIELD_NAMES as ReadonlySet<string>).has(part.fieldname)) {
+                continue;
+            }
+            const name = part.fieldname as keyof ScoreSubmissionFormFields;
+            fields[name] = String(part.value);
+        }
+    }
+
+    for (const name of FIELD_NAMES) {
+        if (fields[name] === undefined) {
+            throw new Error(`missing score submission field: ${name}`);
+        }
+    }
+    for (const name of FILE_NAMES) {
+        if (files[name] === undefined) {
+            throw new Error(`missing score submission file: ${name}`);
         }
     }
 
     return {
-        fields,
-        files,
+        fields: fields as ScoreSubmissionFormFields,
+        files: files as ScoreSubmissionFormFiles,
     };
 }
 
