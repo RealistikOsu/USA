@@ -152,27 +152,32 @@ function decryptScoreSubmissionData(formData: FormData): ScoreSubmissionData {
     );
 
     const scoreDataArray = scoreData.toString().split(":");
+    if (scoreDataArray.length < 18) {
+        throw new Error(
+            `malformed score data: expected >= 18 fields, got ${scoreDataArray.length}`
+        );
+    }
 
     return {
         scoreData: {
-            beatmapMd5: scoreDataArray[0],
-            username: scoreDataArray[1].trimEnd(), // trim supporter "pace"
-            scoreChecksum: scoreDataArray[2],
-            count300s: parseInt(scoreDataArray[3]),
-            count100s: parseInt(scoreDataArray[4]),
-            count50s: parseInt(scoreDataArray[5]),
-            countGekis: parseInt(scoreDataArray[6]),
-            countKatus: parseInt(scoreDataArray[7]),
-            countMisses: parseInt(scoreDataArray[8]),
-            score: parseInt(scoreDataArray[9]),
-            maxCombo: parseInt(scoreDataArray[10]),
+            beatmapMd5: scoreDataArray[0]!,
+            username: scoreDataArray[1]!.trimEnd(), // trim supporter "pace"
+            scoreChecksum: scoreDataArray[2]!,
+            count300s: parseInt(scoreDataArray[3]!),
+            count100s: parseInt(scoreDataArray[4]!),
+            count50s: parseInt(scoreDataArray[5]!),
+            countGekis: parseInt(scoreDataArray[6]!),
+            countKatus: parseInt(scoreDataArray[7]!),
+            countMisses: parseInt(scoreDataArray[8]!),
+            score: parseInt(scoreDataArray[9]!),
+            maxCombo: parseInt(scoreDataArray[10]!),
             fullCombo: scoreDataArray[11] === "True",
-            rank: scoreDataArray[12],
-            mods: parseInt(scoreDataArray[13]),
+            rank: scoreDataArray[12]!,
+            mods: parseInt(scoreDataArray[13]!),
             passed: scoreDataArray[14] === "True",
-            mode: parseInt(scoreDataArray[15]) as OsuMode,
+            mode: parseInt(scoreDataArray[15]!) as OsuMode,
             // skipped value here
-            osuVersion: scoreDataArray[17],
+            osuVersion: scoreDataArray[17]!,
             // skipped value here
         },
         clientHash: clientHash.toString(),
@@ -428,9 +433,7 @@ export const submitScore = async (
         let totalAcc = 0;
         let lastIndex = 0;
 
-        for (let index = 0; index < top100Scores.length; index++) {
-            const score = top100Scores[index];
-
+        for (const [index, score] of top100Scores.entries()) {
             totalPp += score.pp * Math.pow(0.95, index);
             totalAcc += score.accuracy * Math.pow(0.95, index);
 

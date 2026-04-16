@@ -57,8 +57,11 @@ export async function calculatePerformance(
         passed_objects,
     };
 
-    const responses = await requestPerformances([request]);
-    return responses[0];
+    const [response] = await requestPerformances([request]);
+    if (response === undefined) {
+        throw new Error("performance service returned no results");
+    }
+    return response;
 }
 
 export async function calculatePerformances(
