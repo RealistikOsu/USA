@@ -323,13 +323,13 @@ export class ScoreRepository {
     ): Promise<Score | null> {
         const table = scoresTableFromRelaxType(relaxType);
 
-        const result = this.database
+        const result = await this.database
             .selectFrom(table)
             .selectAll()
             .where("id", "=", scoreId)
-            .executeTakeFirstOrThrow();
+            .executeTakeFirst();
 
-        return result !== undefined ? result : null;
+        return result ?? null;
     }
 
     async findByScoreIdWithRank(
