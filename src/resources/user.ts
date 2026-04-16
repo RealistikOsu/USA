@@ -12,7 +12,7 @@ export class UserRepository {
             .selectAll()
             .executeTakeFirst();
 
-        return user !== undefined ? user : null;
+        return user ?? null;
     }
 
     async findByUsernameSafe(usernameSafe: string): Promise<User | null> {
@@ -22,7 +22,7 @@ export class UserRepository {
             .selectAll()
             .executeTakeFirst();
 
-        return user !== undefined ? user : null;
+        return user ?? null;
     }
 
     async updateUserById(userId: number, update: UpdateUser) {

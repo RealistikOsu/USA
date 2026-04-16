@@ -85,7 +85,7 @@ export class ScoreRepository {
             .where("completed", "=", 3)
             .executeTakeFirst();
 
-        return score !== undefined ? score : null;
+        return score ?? null;
     }
 
     async findByUserIdWithRankAndUsername(
@@ -150,7 +150,7 @@ export class ScoreRepository {
             .limit(1)
             .executeTakeFirst();
 
-        return score !== undefined ? score : null;
+        return score ?? null;
     }
 
     async fetchManyWithRankAndUsername(
@@ -372,7 +372,7 @@ export class ScoreRepository {
             .where("s.id", "=", scoreId)
             .executeTakeFirst();
 
-        return result !== undefined ? (result as ScoreWithRank) : null;
+        return (result as ScoreWithRank | undefined) ?? null;
     }
 
     async findTop1000ScoresByUserId(

@@ -18,7 +18,7 @@ export class UserStatsRepository {
             .where("id", "=", userId)
             .executeTakeFirstOrThrow();
 
-        return result !== undefined ? result : null;
+        return result ?? null;
     }
 
     async updateByUserId(
