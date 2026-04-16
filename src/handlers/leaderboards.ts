@@ -4,6 +4,7 @@ import { FastifyReply, FastifyRequest } from "fastify";
 import {
     formatLeaderboardBeatmap,
     hasLeaderboard,
+    RIPPLE_PENDING,
     RIPPLE_UNSUBMITTED,
     RIPPLE_UPDATE_AVAILABLE,
 } from "../adapters/beatmap";
@@ -102,7 +103,8 @@ export const beatmapLeaderboard = async (
     const beatmap = beatmapResult as Beatmap;
 
     const isSupporter = (authenticatedUser.privileges & SUPPORTER_PRIVILEGE) > 0;
-    if (!hasLeaderboard(beatmap) && !isSupporter) {
+    const isUnrankedBeatmap = beatmap.ranked === RIPPLE_PENDING;
+    if (!hasLeaderboard(beatmap) && !(isSupporter && isUnrankedBeatmap)) {
         return `${beatmap.ranked}|false`;
     }
 
