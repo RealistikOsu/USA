@@ -18,6 +18,7 @@ const logger: Logger = new Logger({
     name: "LeaderboardHandler",
 });
 
+// User privilege bit that unlocks supporter-only features.
 const SUPPORTER_PRIVILEGE = 4;
 
 interface BeatmapLeaderboardParameters {
