@@ -4,7 +4,6 @@ import { FastifyReply, FastifyRequest } from "fastify";
 import {
     formatLeaderboardBeatmap,
     hasLeaderboard,
-    RIPPLE_PENDING,
     RIPPLE_UNSUBMITTED,
     RIPPLE_UPDATE_AVAILABLE,
 } from "../adapters/beatmap";
@@ -19,7 +18,6 @@ const logger: Logger = new Logger({
     name: "LeaderboardHandler",
 });
 
-// User privilege bit that unlocks supporter-only features.
 const SUPPORTER_PRIVILEGE = 4;
 
 interface BeatmapLeaderboardParameters {
@@ -103,8 +101,7 @@ export const beatmapLeaderboard = async (
     const beatmap = beatmapResult as Beatmap;
 
     const isSupporter = (authenticatedUser.privileges & SUPPORTER_PRIVILEGE) > 0;
-    const isUnrankedBeatmap = beatmap.ranked === RIPPLE_PENDING;
-    if (!hasLeaderboard(beatmap) && !(isSupporter && isUnrankedBeatmap)) {
+    if (!hasLeaderboard(beatmap) && !isSupporter) {
         return `${beatmap.ranked}|false`;
     }
 
